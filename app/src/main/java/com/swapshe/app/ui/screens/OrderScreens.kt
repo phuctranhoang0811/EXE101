@@ -230,7 +230,8 @@ fun MyOrdersScreen(
 fun OrderDetailScreen(
     orderId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToReport: (String, String) -> Unit = { _, _ -> }
+    onNavigateToReport: (String, String) -> Unit = { _, _ -> },
+    onNavigateToDisputeDetail: (String) -> Unit = {}
 ) {
     val repository = SwapSheRepository.instance
     val orders by repository.orders.collectAsState()
@@ -277,6 +278,49 @@ fun OrderDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
+            // Escrow 48h Protection Banner (Flow G & Flow D)
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = com.swapshe.app.theme.EscrowBg,
+                border = androidx.compose.foundation.BorderStroke(1.dp, com.swapshe.app.theme.EscrowBlue.copy(alpha = 0.4f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .background(com.swapshe.app.theme.EscrowBlue, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(imageVector = Icons.Filled.Info, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    }
+                    Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
+                        Text(
+                            text = if (order.status == OrderStatus.COMPLETED)
+                                "Tiền đã giải ngân thành công cho Seller"
+                            else
+                                "🛡️ Ví Escrow đang tạm giữ ${formatter.format(order.subtotal)}đ",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = com.swapshe.app.theme.EscrowBlue
+                        )
+                        Text(
+                            text = if (order.status == OrderStatus.DELIVERED)
+                                "Thời hạn khiếu nại / trả hàng còn lại: 47 giờ 25 phút. Tiền sẽ chỉ chuyển cho Seller sau thời gian này."
+                            else if (order.status == OrderStatus.DISPUTED)
+                                "Đang có khiếu nại phát sinh. Tiền trong ví Ký quỹ đang ĐÓNG BĂNG để bảo vệ bạn."
+                            else
+                                "Bảo hiểm giao dịch an toàn 48h bởi SwapShe.",
+                            fontSize = 11.sp,
+                            color = com.swapshe.app.theme.EscrowBlue.copy(alpha = 0.85f),
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
+
             // Order Code & Status Header
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -416,7 +460,7 @@ fun OrderDetailScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Bottom Actions based on Order status (BR-09)
+        // Bottom Actions based on Order status (BR-09 & Flow D)
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
@@ -431,7 +475,7 @@ fun OrderDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         SecondaryButton(
-                            text = "Báo cáo có vấn đề (Report Issue)",
+                            text = "⚠️ Khiếu nại / Trả hàng (Dispute 48h)",
                             onClick = { onNavigateToReport("ORDER", order.id) }
                         )
                     }
@@ -450,10 +494,9 @@ fun OrderDetailScreen(
                         }
                     }
                     OrderStatus.DISPUTED -> {
-                        SecondaryButton(
-                            text = "Đang xử lý khiếu nại cùng người bán",
-                            enabled = false,
-                            onClick = {}
+                        PrimaryButton(
+                            text = "🔍 Xem chi tiết Khiếu nại & Thương lượng",
+                            onClick = { onNavigateToDisputeDetail(order.id) }
                         )
                     }
                     else -> {

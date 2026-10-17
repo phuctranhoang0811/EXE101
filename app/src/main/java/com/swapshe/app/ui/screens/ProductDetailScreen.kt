@@ -35,11 +35,15 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material.icons.outlined.Shield
+import com.swapshe.app.model.BodyMeasurements
+import com.swapshe.app.ui.components.VirtualFitStudioSheet
 import androidx.compose.material3.HorizontalDivider
+import java.text.DecimalFormat
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -73,13 +77,15 @@ import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.ErrorRed
 import com.swapshe.app.theme.Primary
+import com.swapshe.app.theme.PrimarySoft15
 import com.swapshe.app.theme.SurfaceWhite
 import com.swapshe.app.theme.TextMuted
 import com.swapshe.app.theme.TextPrimary
 import com.swapshe.app.theme.TextSecondary
 import com.swapshe.app.theme.WarmCream
 import com.swapshe.app.theme.WarningAmber
-import java.text.DecimalFormat
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import com.swapshe.app.model.EkycStatus
 
 @Composable
 fun ProductDetailScreen(
@@ -89,7 +95,9 @@ fun ProductDetailScreen(
     onNavigateToSeller: (String) -> Unit,
     onNavigateToAuth: (isRegister: Boolean) -> Unit,
     onNavigateToSwapOffer: (String) -> Unit = {},
-    onNavigateToReport: (String, String) -> Unit = { _, _ -> }
+    onNavigateToReport: (String, String) -> Unit = { _, _ -> },
+    onNavigateToChat: (String, String) -> Unit = { _, _ -> },
+    onNavigateToEkyc: () -> Unit = {}
 ) {
     val repository = SwapSheRepository.instance
     val products by repository.products.collectAsState()
@@ -97,6 +105,7 @@ fun ProductDetailScreen(
     val product = products.find { it.id == productId } ?: products.first()
 
     var showAuthGate by remember { mutableStateOf(false) }
+    var showVirtualFitStudio by remember { mutableStateOf(false) }
 
     val formatter = DecimalFormat("#,###")
     val pagerState = rememberPagerState(pageCount = { product.images.size })
@@ -218,7 +227,22 @@ fun ProductDetailScreen(
                         color = TextMuted,
                         letterSpacing = 1.sp
                     )
-                    ConditionBadge(condition = product.condition)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        // SwapShe Grade (Flow I)
+                        Box(
+                            modifier = Modifier
+                                .background(PrimarySoft15, RoundedCornerShape(100.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "${product.grade.code}: ${product.grade.percentage}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Primary
+                            )
+                        }
+                        ConditionBadge(condition = product.condition)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -231,25 +255,93 @@ fun ProductDetailScreen(
                     color = TextPrimary
                 )
 
-                // Price display
+                // Price & Fit Score (Flow E: Smart Match)
+                val fitScore = remember(user, product) { repository.calculateFitScore(user, product) }
+
                 Row(
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "${formatter.format(product.price)}đ",
-                        fontFamily = FontFamily.Serif,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Primary
-                    )
-                    if (product.originalPrice != null) {
+                    Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "${formatter.format(product.originalPrice)}đ",
-                            fontSize = 14.sp,
-                            color = TextMuted,
-                            textDecoration = TextDecoration.LineThrough,
-                            modifier = Modifier.padding(start = 10.dp, bottom = 2.dp)
+                            text = "${formatter.format(product.price)}đ",
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary
+                        )
+                        if (product.originalPrice != null) {
+                            Text(
+                                text = "${formatter.format(product.originalPrice)}đ",
+                                fontSize = 14.sp,
+                                color = TextMuted,
+                                textDecoration = TextDecoration.LineThrough,
+                                modifier = Modifier.padding(start = 10.dp, bottom = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Smart Match Fit Score Pill (Flow E)
+                    Surface(
+                        shape = RoundedCornerShape(100.dp),
+                        color = com.swapshe.app.theme.SuccessBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, com.swapshe.app.theme.SuccessGreen)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🎯 Hợp $fitScore% số đo",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = com.swapshe.app.theme.SuccessGreen
+                            )
+                        }
+                    }
+                }
+
+                // Transparent Flaw Warning (Flow I)
+                if (product.flaws.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = com.swapshe.app.theme.WarningBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, com.swapshe.app.theme.WarningAmber),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    ) {
+                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.Top) {
+                            Icon(imageVector = Icons.Filled.Star, contentDescription = null, tint = com.swapshe.app.theme.WarningAmber, modifier = Modifier.size(16.dp))
+                            Text(
+                                text = "Lưu ý khuyết điểm từ Người bán: ${product.flaws.joinToString(" • ")}",
+                                fontSize = 11.sp,
+                                color = TextPrimary,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Escrow Protection Banner (Flow G)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = com.swapshe.app.theme.EscrowBg,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.swapshe.app.theme.EscrowBlue.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Outlined.Shield, contentDescription = null, tint = com.swapshe.app.theme.EscrowBlue, modifier = Modifier.size(16.dp))
+                        Text(
+                            text = "🛡️ Bảo vệ bởi Ví Ký Quỹ SwapShe Escrow: Tạm giữ tiền 48h sau khi nhận, đổi trả 100% nếu phát hiện lỗi sai mô tả.",
+                            fontSize = 11.sp,
+                            color = com.swapshe.app.theme.EscrowBlue,
+                            modifier = Modifier.padding(start = 6.dp)
                         )
                     }
                 }
@@ -318,6 +410,61 @@ fun ProductDetailScreen(
                                 Text(text = "$it cm", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                             }
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Virtual Fit Studio 2D Mannequin Trigger Card
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = PrimarySoft15,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.45f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showVirtualFitStudio = true }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Primary,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Straighten,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Phòng Thử Đồ 2D & Thước Đo Vừa Vặn",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                                Text(
+                                    text = "Ướm lên Mannequin, quét nhiệt độ chật/rộng & đo gấu áo",
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
@@ -460,12 +607,35 @@ fun ProductDetailScreen(
                         onClick = {}
                     )
                 } else {
+                    // Chat button (Flow C & Flow H)
+                    Surface(
+                        shape = CircleShape,
+                        color = PrimarySoft15,
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clickable {
+                                onNavigateToChat(product.seller.shopName, product.id)
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.ChatBubbleOutline,
+                                contentDescription = "Chat với Người bán",
+                                tint = Primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
                     if (product.canSwap) {
                         SecondaryButton(
-                            text = "Đề xuất đổi đồ 🔄",
+                            text = "Đổi đồ ⇄",
                             onClick = {
                                 if (user.isGuest) {
                                     showAuthGate = true
+                                } else if (user.trustProfile.status != EkycStatus.VERIFIED) {
+                                    repository.showToast("🛡️ Cần hoàn tất eKYC trước khi gửi đề nghị đổi đồ!")
+                                    onNavigateToEkyc()
                                 } else {
                                     onNavigateToSwapOffer(product.id)
                                 }
@@ -485,7 +655,7 @@ fun ProductDetailScreen(
                                 onNavigateToCheckout()
                             }
                         },
-                        modifier = Modifier.weight(if (product.canSwap) 1f else 2f)
+                        modifier = Modifier.weight(if (product.canSwap) 1.2f else 2f)
                     )
                 }
             }
@@ -505,4 +675,27 @@ fun ProductDetailScreen(
             onNavigateToAuth(true)
         }
     )
+
+    if (showVirtualFitStudio) {
+        VirtualFitStudioSheet(
+            initialProduct = product,
+            allProducts = products,
+            userHeightCm = user.bodyMeasurements?.heightCm ?: 158,
+            userBustCm = user.bodyMeasurements?.bustCm ?: 84,
+            userWaistCm = user.bodyMeasurements?.waistCm ?: 66,
+            userHipsCm = user.bodyMeasurements?.hipsCm ?: 90,
+            onDismissRequest = { showVirtualFitStudio = false },
+            onApplyMeasurements = { h, b, w, hp ->
+                repository.updatePreferences(
+                    measurements = BodyMeasurements(
+                        heightCm = h,
+                        weightKg = user.bodyMeasurements?.weightKg ?: 48,
+                        bustCm = b,
+                        waistCm = w,
+                        hipsCm = hp
+                    )
+                )
+            }
+        )
+    }
 }

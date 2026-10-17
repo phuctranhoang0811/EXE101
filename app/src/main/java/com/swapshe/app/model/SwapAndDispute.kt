@@ -59,7 +59,10 @@ data class SwapTransaction(
     val shipmentBtoA: TwoWayShipment,
     val status: SwapTransactionStatus = SwapTransactionStatus.AWAITING_DISPATCH,
     val createdAt: String,
-    val timeline: List<TimelineEvent> = emptyList()
+    val timeline: List<TimelineEvent> = emptyList(),
+    val escrowDepositAmount: Long = 50000L,
+    val isEscrowDepositedA: Boolean = true,
+    val isEscrowDepositedB: Boolean = false
 )
 
 enum class DisputeTargetType(val label: String) {
@@ -76,6 +79,20 @@ enum class DisputeStatus(val label: String) {
     REJECTED("Rejected")
 }
 
+enum class DisputeOfferType(val label: String) {
+    PARTIAL_REFUND("Thương lượng hoàn tiền một phần"),
+    FULL_RETURN_REFUND("Đồng ý trả hàng hoàn tiền 100%"),
+    REJECT("Từ chối khiếu nại (Không chấp thuận)"),
+    REJECT_AND_ESCALATE("Từ chối & Nhờ SwapShe Admin phân xử")
+}
+
+data class DisputeOffer(
+    val type: DisputeOfferType,
+    val amount: Long? = null,
+    val note: String = "",
+    val timestamp: String = ""
+)
+
 data class DisputeReport(
     val id: String,
     val reporterId: String,
@@ -87,8 +104,19 @@ data class DisputeReport(
     val description: String,
     val status: DisputeStatus = DisputeStatus.OPEN,
     val createdAt: String,
-    val resolutionNote: String? = null
-)
+    val resolutionNote: String? = null,
+    val evidencePhotos: List<String> = emptyList(),
+    val evidenceVideoUrl: String? = null,
+    val requestedRefundAmount: Long? = null,
+    val sellerOffer: DisputeOffer? = null,
+    val adminVerdict: String? = null,
+    val returnTrackingCode: String? = null,
+    val isEscrowFrozen: Boolean = true,
+    val isSellerReturnConfirmed: Boolean = false
+) {
+    val requestedAmount: Long get() = requestedRefundAmount ?: 0L
+    val evidenceImages: List<String> get() = evidencePhotos
+}
 
 data class SavedSearch(
     val id: String,

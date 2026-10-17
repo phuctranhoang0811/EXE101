@@ -20,10 +20,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,7 +63,11 @@ import com.swapshe.app.theme.WarningBg
 import java.text.DecimalFormat
 
 @Composable
-fun ConditionBadge(condition: ConditionType, modifier: Modifier = Modifier) {
+fun ConditionBadge(
+    condition: ConditionType,
+    grade: com.swapshe.app.model.SwapSheGrade? = null,
+    modifier: Modifier = Modifier
+) {
     val (bg, textCol) = when (condition) {
         ConditionType.LIKE_NEW -> SuccessBg to SuccessGreen
         ConditionType.EXCELLENT -> Color(0xFFEBF3F7) to Color(0xFF4A7A96)
@@ -72,11 +80,12 @@ fun ConditionBadge(condition: ConditionType, modifier: Modifier = Modifier) {
             .background(bg, RoundedCornerShape(100.dp))
             .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
+        val gradePrefix = if (grade != null) "${grade.code} • " else ""
         Text(
-            text = condition.label,
+            text = "$gradePrefix${condition.label}",
             color = textCol,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -86,7 +95,8 @@ fun ProductCard(
     product: Product,
     onClick: () -> Unit,
     onLikeToggle: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    matchBadgeText: String? = null
 ) {
     val formatter = DecimalFormat("#,###")
     val isSold = product.status == ProductStatus.SOLD
@@ -165,6 +175,7 @@ fun ProductCard(
                 } else {
                     ConditionBadge(
                         condition = product.condition,
+                        grade = product.grade,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(8.dp)
@@ -179,6 +190,34 @@ fun ProductCard(
                         .align(Alignment.TopEnd)
                         .padding(6.dp)
                 )
+
+                // Match percentage badge (Flow E: Fit Assistant / Style match)
+                if (matchBadgeText != null && !isSold) {
+                    Surface(
+                        shape = RoundedCornerShape(topEnd = 8.dp),
+                        color = Color(0xEB44343C),
+                        modifier = Modifier.align(Alignment.BottomStart)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AutoAwesome,
+                                contentDescription = null,
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = matchBadgeText,
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
             }
 
             // Info Details

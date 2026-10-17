@@ -36,10 +36,15 @@ import com.swapshe.app.data.SwapSheRepository
 import com.swapshe.app.theme.Primary
 import com.swapshe.app.ui.navigation.BottomBar
 import com.swapshe.app.ui.navigation.Screen
+import com.swapshe.app.ui.components.FloatingDemoControlBar
+import com.swapshe.app.ui.screens.AdminDashboardScreen
 import com.swapshe.app.ui.screens.AuthScreen
+import com.swapshe.app.ui.screens.ChatScreen
 import com.swapshe.app.ui.screens.ColorPreferenceScreen
 import com.swapshe.app.ui.screens.CreateEditListingScreen
 import com.swapshe.app.ui.screens.CreateSwapOfferScreen
+import com.swapshe.app.ui.screens.DisputeDetailScreen
+import com.swapshe.app.ui.screens.EkycScreen
 import com.swapshe.app.ui.screens.ExploreScreen
 import com.swapshe.app.ui.screens.HomeScreen
 import com.swapshe.app.ui.screens.MockPaymentScreen
@@ -63,6 +68,7 @@ import com.swapshe.app.ui.screens.StylePreferenceScreen
 import com.swapshe.app.ui.screens.SwapDetailScreen
 import com.swapshe.app.ui.screens.SwapDiscoveryScreen
 import com.swapshe.app.ui.screens.SwapRequestsScreen
+import com.swapshe.app.ui.screens.WalletScreen
 import com.swapshe.app.ui.screens.WelcomeScreen
 import com.swapshe.app.ui.screens.WishlistScreen
 import kotlinx.coroutines.delay
@@ -100,10 +106,21 @@ fun MainApp() {
                     BottomBar(
                         currentRoute = currentRoute,
                         onNavigate = { route ->
-                            navController.navigate(route) {
-                                popUpTo(Screen.Home.route) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+                            if (route == currentRoute) return@BottomBar
+                            if (route == Screen.Home.route) {
+                                val popped = navController.popBackStack(Screen.Home.route, inclusive = false)
+                                if (!popped) {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            } else {
+                                navController.navigate(route) {
+                                    popUpTo(Screen.Home.route) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         },
                         onShowPlaceholderToast = { msg ->
@@ -281,6 +298,12 @@ fun MainApp() {
                         },
                         onNavigateToReport = { type, id ->
                             navController.navigate(Screen.ReportDispute.createRoute(type, id, "Sản phẩm #$id"))
+                        },
+                        onNavigateToChat = { sellerName, id ->
+                            navController.navigate(Screen.Chat.createRoute(sellerName, id))
+                        },
+                        onNavigateToEkyc = {
+                            navController.navigate(Screen.Ekyc.route)
                         }
                     )
                 }
@@ -387,6 +410,9 @@ fun MainApp() {
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToReport = { type, id ->
                             navController.navigate(Screen.ReportDispute.createRoute(type, id, "Đơn mua #$id"))
+                        },
+                        onNavigateToDisputeDetail = { disputeId ->
+                            navController.navigate(Screen.DisputeDetail.createRoute(disputeId))
                         }
                     )
                 }
@@ -401,7 +427,9 @@ fun MainApp() {
                         onNavigateToCloset = { navController.navigate(Screen.MyCloset.route) },
                         onNavigateToSwapRequests = { navController.navigate(Screen.SwapRequests.route) },
                         onNavigateToNotifications = { navController.navigate(Screen.Notifications.route) },
-                        onNavigateToSellerOrders = { navController.navigate(Screen.SellerOrders.route) }
+                        onNavigateToSellerOrders = { navController.navigate(Screen.SellerOrders.route) },
+                        onNavigateToWallet = { navController.navigate(Screen.Wallet.route) },
+                        onNavigateToEkyc = { navController.navigate(Screen.Ekyc.route) }
                     )
                 }
 
@@ -418,6 +446,9 @@ fun MainApp() {
                         },
                         onPreviewProduct = { id ->
                             navController.navigate(Screen.ProductDetail.createRoute(id))
+                        },
+                        onNavigateToEkyc = {
+                            navController.navigate(Screen.Ekyc.route)
                         }
                     )
                 }
@@ -490,7 +521,7 @@ fun MainApp() {
                             navController.navigate(Screen.CreateEditListing.createRoute(null))
                         },
                         onOfferSent = {
-                            navController.navigate(Screen.SwapRequests.route) {
+                            navController.navigate(Screen.SwapRequests.createRoute(1)) {
                                 popUpTo(Screen.SwapDiscovery.route)
                             }
                         }
@@ -498,8 +529,16 @@ fun MainApp() {
                 }
 
                 // F28: My Swap Requests (Inbox / Outbox)
-                composable(Screen.SwapRequests.route) {
+                composable(
+                    route = Screen.SwapRequests.route,
+                    arguments = listOf(navArgument("tab") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    })
+                ) { backStackEntry ->
+                    val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
                     SwapRequestsScreen(
+                        initialTab = initialTab,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToSwapDetail = { id ->
                             navController.navigate(Screen.SwapDetail.createRoute(id))
@@ -539,7 +578,12 @@ fun MainApp() {
                         targetTypeStr = targetType,
                         targetId = targetId,
                         targetTitle = targetTitle,
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToDisputeDetail = { dispId ->
+                            navController.navigate(Screen.DisputeDetail.createRoute(dispId)) {
+                                popUpTo(Screen.Home.route)
+                            }
+                        }
                     )
                 }
 
@@ -548,10 +592,93 @@ fun MainApp() {
                     NotificationCenterScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToOrders = { navController.navigate(Screen.MyOrders.route) },
-                        onNavigateToSwap = { navController.navigate(Screen.SwapRequests.route) }
+                        onNavigateToSwap = { navController.navigate(Screen.SwapRequests.route) },
+                        onNavigateToProduct = { prodId ->
+                            navController.navigate(Screen.ProductDetail.createRoute(prodId))
+                        }
+                    )
+                }
+
+                // --- FLOW G: ESCROW CASHFLOW & WALLET ---
+                composable(Screen.Wallet.route) {
+                    WalletScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToExplore = { navController.navigate(Screen.Explore.route) }
+                    )
+                }
+
+                // --- FLOW H: eKYC & SHE-TRUST VERIFICATION ---
+                composable(Screen.Ekyc.route) {
+                    EkycScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onSuccess = { navController.popBackStack() }
+                    )
+                }
+
+                // --- FLOW D: EXTENDED DISPUTE NEGOTIATION & ARBITRATION ---
+                composable(
+                    route = Screen.DisputeDetail.route,
+                    arguments = listOf(navArgument("id") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val disputeId = backStackEntry.arguments?.getString("id") ?: ""
+                    DisputeDetailScreen(
+                        disputeId = disputeId,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // --- FLOW C & FLOW H: DIRECT CHAT & ANTI-SCAM ESCROW PROTECTION ---
+                composable(
+                    route = Screen.Chat.route,
+                    arguments = listOf(
+                        navArgument("targetName") { type = NavType.StringType; defaultValue = "Người bán" },
+                        navArgument("productId") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    )
+                ) { backStackEntry ->
+                    val targetName = backStackEntry.arguments?.getString("targetName") ?: "Người bán"
+                    val productId = backStackEntry.arguments?.getString("productId")
+                    ChatScreen(
+                        recipientName = targetName,
+                        productId = productId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToSwapOffer = { prodId ->
+                            navController.navigate(Screen.CreateSwapOffer.createRoute(prodId))
+                        }
+                    )
+                }
+
+                // Flow D & Admin Governance
+                composable(Screen.AdminDashboard.route) {
+                    AdminDashboardScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToDisputeDetail = { dispId ->
+                            navController.navigate(Screen.DisputeDetail.createRoute(dispId))
+                        }
                     )
                 }
             }
+        }
+
+        // Floating Dev Simulator & Role Switcher (Buyer <-> Seller <-> Admin)
+        Box(
+            modifier = Modifier.align(Alignment.BottomEnd)
+        ) {
+            FloatingDemoControlBar(
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
+                onNavigateToSellerCloset = {
+                    navController.navigate(Screen.MyCloset.route)
+                },
+                onNavigateToDisputeDetail = { dispId ->
+                    navController.navigate(Screen.DisputeDetail.createRoute(dispId))
+                },
+                onNavigateToAdminDashboard = {
+                    navController.navigate(Screen.AdminDashboard.route)
+                }
+            )
         }
 
         // Global Animated Toast Notification Banner

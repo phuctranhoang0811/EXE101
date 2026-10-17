@@ -21,6 +21,8 @@ data class Seller(
     val memberSince: String,
     val location: String,
     val isVerified: Boolean = false,
+    val sheTrustScore: Int = 98,
+    val trustBadge: String = "Queen Closet 👑",
     val bio: String = "",
     val reviews: List<SellerReview> = emptyList()
 )

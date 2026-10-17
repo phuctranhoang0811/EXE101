@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#754B61</color>
-    <color name="primary_soft">#D9A8B8</color>
-    <color name="background">#FFF8F2</color>
+    <color name="primary">#B38B4D</color>
+    <color name="primary_soft">#E4C99E</color>
+    <color name="blossom_pink">#E09397</color>
+    <color name="background">#FAF6F0</color>
     <color name="surface">#FFFFFF</color>
-    <color name="text_primary">#44343C</color>
-    <color name="border">#EEE0DE</color>
-    <color name="success">#799078</color>
-    <color name="error">#B76A5E</color>
+    <color name="text_primary">#382C24</color>
+    <color name="border">#E8DDD0</color>
+    <color name="success">#6F8F70</color>
+    <color name="error">#BA5C52</color>
 </resources>
+

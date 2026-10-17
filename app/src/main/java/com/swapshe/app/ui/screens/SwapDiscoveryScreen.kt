@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -78,42 +78,68 @@ fun SwapDiscoveryScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 10.dp)
+            ) {
                 Text(
-                    text = "Đổi đồ 1-1 (Direct Swap)",
+                    text = "Đổi đồ 1-1",
                     fontFamily = FontFamily.Serif,
-                    fontSize = 22.sp,
+                    fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
                 Text(
                     text = "Trao đổi ngang giá trị • Không bù tiền",
-                    fontSize = 12.sp,
-                    color = TextSecondary
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    maxLines = 1
                 )
             }
 
-            // Shortcut to Swap Requests Inbox
+            // Shortcut to Swap Requests Inbox - sleek, compact pill badge
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = PrimarySoft15,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.35f)),
                 modifier = Modifier.clickable { onNavigateToSwapRequests() }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Filled.SwapHoriz, contentDescription = null, tint = Primary, modifier = Modifier.size(18.dp))
+                    Icon(
+                        imageVector = Icons.Filled.SwapHoriz,
+                        contentDescription = null,
+                        tint = Primary,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = " Yêu cầu ($pendingCount)",
+                        text = "Yêu cầu",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Primary
                     )
+                    if (pendingCount > 0) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Primary
+                        ) {
+                            Text(
+                                text = "$pendingCount",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -127,7 +153,7 @@ fun SwapDiscoveryScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(imageVector = Icons.Filled.Sync, contentDescription = null, tint = TextMuted, modifier = Modifier.size(56.dp))
+                    Icon(imageVector = Icons.Filled.SwapHoriz, contentDescription = null, tint = TextMuted, modifier = Modifier.size(56.dp))
                     Spacer(modifier = Modifier.height(12.dp))
                     Text("Hiện chưa có món đồ nào mở chế độ đổi đồ", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Text("Bạn có thể đăng đồ lên My Closet và bật tính năng Swap nhé!", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(top = 4.dp))
@@ -181,19 +207,30 @@ private fun SwapProductGridCard(
 
                 // Swap Badge
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Primary,
+                    shape = RoundedCornerShape(6.dp),
+                    color = Primary.copy(alpha = 0.92f),
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(8.dp)
                 ) {
-                    Text(
-                        text = "🔄 Sẵn sàng Swap",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = androidx.compose.ui.graphics.Color.White,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SwapHoriz,
+                            contentDescription = null,
+                            tint = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = "Sẵn sàng Swap",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.ui.graphics.Color.White
+                        )
+                    }
                 }
             }
 

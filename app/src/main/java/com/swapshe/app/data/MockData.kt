@@ -12,6 +12,13 @@ import com.swapshe.app.model.SellerReview
 import com.swapshe.app.model.ShippingAddress
 import com.swapshe.app.model.TimelineEvent
 import com.swapshe.app.model.User
+import com.swapshe.app.model.UserRole
+import com.swapshe.app.model.SheTrustProfile
+import com.swapshe.app.model.TrustBadgeType
+import com.swapshe.app.model.EkycStatus
+import com.swapshe.app.model.Wallet
+import com.swapshe.app.model.WalletTransaction
+import com.swapshe.app.model.WalletTransactionType
 
 data class StyleOption(val id: String, val name: String, val imageUrl: String)
 data class ColorOption(val id: String, val name: String, val hex: Long)
@@ -99,6 +106,75 @@ object MockData {
     )
 
     val products = listOf(
+        Product(
+            id = "demo_dress_01",
+            title = "Đầm Maxi Hoa Đi Biển (Cottagecore)",
+            brand = "Cottagecore Bloom",
+            price = 320000L,
+            originalPrice = 750000L,
+            condition = ConditionType.LIKE_NEW,
+            size = "M",
+            category = "Dresses",
+            style = "Vintage",
+            color = "Beige Floral",
+            images = listOf(
+                "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80",
+                "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 86, waist = 68, hips = 94, length = 115),
+            fabricStretch = "Không co giãn (Non-stretch)",
+            description = "Váy tơ hoa nhí dáng maxi vintage, tôn ngực và chiết eo thon. Dáng dài 115cm từ vai xuống, phù hợp đi biển, chụp ảnh ngoại cảnh.",
+            seller = defaultSellerLinh,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE,
+            isLiked = true
+        ),
+        Product(
+            id = "demo_coat_02",
+            title = "Áo Khoác Trench Coat Xanh (Autumn)",
+            brand = "Classic Atelier",
+            price = 480000L,
+            originalPrice = 1200000L,
+            condition = ConditionType.LIKE_NEW,
+            size = "L",
+            category = "Outerwear",
+            style = "Elegant",
+            color = "Sage Green",
+            images = listOf(
+                "https://images.unsplash.com/photo-1544441893-675973e31985?w=800&q=80",
+                "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 98, waist = 92, hips = 100, length = 95),
+            fabricStretch = "Form rộng / Khoác ngoài",
+            description = "Chất kaki tuyết mưa cao cấp màu xanh rêu pastel, phom suông thanh lịch chống gió nhẹ, dáng khoác ngoài dễ mặc layer.",
+            seller = defaultSellerAn,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE,
+            isLiked = true
+        ),
+        Product(
+            id = "demo_skirt_03",
+            title = "Chân Váy Chữ A Công Sở (Midi Skirt)",
+            brand = "Modern Office",
+            price = 210000L,
+            originalPrice = 450000L,
+            condition = ConditionType.EXCELLENT,
+            size = "S",
+            category = "Skirts",
+            style = "Minimal",
+            color = "Camel",
+            images = listOf(
+                "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80",
+                "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = null, waist = 64, hips = 90, length = 65),
+            fabricStretch = "Co giãn nhẹ",
+            description = "Chân váy chữ A cạp cao tôn dáng, chất vải tây đứng phom ít nhăn, độ dài 65cm từ cạp eo xuống che khuyết điểm đùi cực tốt.",
+            seller = defaultSellerLinh,
+            canSwap = false,
+            status = ProductStatus.AVAILABLE,
+            isLiked = false
+        ),
         Product(
             id = "prod_001",
             title = "Soft Pink Knit Cardigan",
@@ -422,6 +498,46 @@ object MockData {
             seller = defaultSellerAn,
             canSwap = true,
             status = ProductStatus.AVAILABLE
+        ),
+        Product(
+            id = "prod_017",
+            title = "Petite Linen Button-Down Crop Top",
+            brand = "French Minimal",
+            price = 145000L,
+            originalPrice = 320000L,
+            condition = ConditionType.LIKE_NEW,
+            size = "XS",
+            category = "Tops",
+            style = "Minimal",
+            color = "Cream",
+            images = listOf(
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 80, length = 42, waist = 62, shoulder = 34),
+            description = "Áo crop top vải đũi linen nhẹ mát, phom petite ôm gọn cho bạn gái nhỏ nhắn. Cúc gỗ vintage tinh xảo.",
+            seller = defaultSellerLinh,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE
+        ),
+        Product(
+            id = "prod_018",
+            title = "Relaxed Vintage Houndstooth Blazer",
+            brand = "Classic Heritage",
+            price = 285000L,
+            originalPrice = 650000L,
+            condition = ConditionType.EXCELLENT,
+            size = "XL",
+            category = "Outerwear",
+            style = "Vintage",
+            color = "Beige",
+            images = listOf(
+                "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 108, length = 74, shoulder = 46),
+            description = "Blazer dạ họa tiết răng sói dáng suông oversize rộng rãi, mặc layer cực ấm và thời thượng.",
+            seller = defaultSellerAn,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE
         )
     )
 
@@ -454,17 +570,134 @@ object MockData {
         detailAddress = "120 Nguyễn Huệ, Căn hộ 4B"
     )
 
-    val initialUser = User(
+    val demoBuyerUser = User(
         id = "user_my",
-        name = "Hoàng My",
-        email = "hoangmy@example.com",
+        name = "Hoàng My (Buyer 👩)",
+        email = "buyer.my@swapshe.vn",
         isGuest = false,
         avatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&q=80",
         stylePreferences = setOf("Vintage", "Minimal"),
         sizePreference = "S",
         colorPreferences = setOf("Dusty Pink", "Cream"),
-        savedAddresses = listOf(defaultAddress)
+        savedAddresses = listOf(defaultAddress),
+        role = UserRole.BUYER,
+        bio = "Người mua chính hiệu • Săn đồ vintage secondhand chuẩn Size S • Ký quỹ Escrow bảo đảm 100%",
+        trustProfile = SheTrustProfile(
+            score = 95,
+            badge = TrustBadgeType.QUEEN_CLOSET,
+            status = EkycStatus.VERIFIED,
+            completedOrdersCount = 18,
+            disputeFreeStreakMonths = 6
+        ),
+        wallet = Wallet(
+            availableBalance = 1850000L,
+            escrowHoldBalance = 420000L,
+            pendingWithdrawal = 0L,
+            transactions = listOf(
+                WalletTransaction(
+                    id = "tx_b01",
+                    type = WalletTransactionType.ESCROW_HOLD,
+                    amount = 420000L,
+                    title = "Ký quỹ Escrow mua đồ",
+                    description = "Tạm giữ an toàn tiền mua hàng đơn #SW-20261014-001",
+                    timestamp = "14/10/2026 20:30",
+                    isPositive = false,
+                    orderCode = "SW-20261014-001"
+                ),
+                WalletTransaction(
+                    id = "tx_b02",
+                    type = WalletTransactionType.SWAP_DEPOSIT,
+                    amount = 50000L,
+                    title = "Cọc bảo đảm đổi đồ 1-1",
+                    description = "Ký quỹ Escrow bảo đảm giao dịch đổi với Linh's Closet",
+                    timestamp = "14/10/2026 20:00",
+                    isPositive = false
+                )
+            )
+        )
     )
+
+    val demoSellerUser = User(
+        id = "seller_linh",
+        name = "Thùy Linh - Linh's Closet (Seller 👗)",
+        email = "seller.linh@swapshe.vn",
+        isGuest = false,
+        avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+        stylePreferences = setOf("Vintage", "Casual", "Elegant"),
+        sizePreference = "M",
+        colorPreferences = setOf("Cream", "Pastel"),
+        savedAddresses = listOf(
+            ShippingAddress(
+                fullName = "Thùy Linh (Linh's Closet)",
+                phone = "0908889999",
+                province = "TP. Hồ Chí Minh",
+                ward = "Phường Bến Nghé, Quận 1",
+                detailAddress = "Kho đồ: 28 Lê Lợi"
+            )
+        ),
+        role = UserRole.SELLER,
+        bio = "Top Seller Linh's Closet • 112 giao dịch thành công • Chuyên đồ Like New 99% tuyển chọn Nhật & Hàn",
+        trustProfile = SheTrustProfile(
+            score = 99,
+            badge = TrustBadgeType.QUEEN_CLOSET,
+            status = EkycStatus.VERIFIED,
+            completedOrdersCount = 112,
+            disputeFreeStreakMonths = 12
+        ),
+        wallet = Wallet(
+            availableBalance = 5420000L,
+            escrowHoldBalance = 640000L,
+            pendingWithdrawal = 1200000L,
+            transactions = listOf(
+                WalletTransaction(
+                    id = "tx_s01",
+                    type = WalletTransactionType.RELEASE_EARNING,
+                    amount = 304000L,
+                    title = "Doanh thu bán đồ (Đã trừ 5% phí sàn)",
+                    description = "Đơn #SW-20261014-002 đã hoàn tất giải ngân",
+                    timestamp = "14/10/2026 18:00",
+                    isPositive = true,
+                    orderCode = "SW-20261014-002"
+                ),
+                WalletTransaction(
+                    id = "tx_s02",
+                    type = WalletTransactionType.WITHDRAW_BANK,
+                    amount = 1200000L,
+                    title = "Rút tiền về Vietcombank (*9812)",
+                    description = "Lệnh chuyển tiền tài khoản ngân hàng đang xử lý",
+                    timestamp = "15/10/2026 09:15",
+                    isPositive = false
+                )
+            )
+        )
+    )
+
+    val demoAdminUser = User(
+        id = "admin_swapshe",
+        name = "Trọng tài SwapShe (Admin ⚖️)",
+        email = "trust.safety@swapshe.vn",
+        isGuest = false,
+        avatarUrl = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&q=80",
+        stylePreferences = setOf("Minimal"),
+        sizePreference = "Free",
+        role = UserRole.ADMIN,
+        bio = "Bộ phận Trust & Safety SwapShe • Trọng tài phân xử khiếu nại Escrow 48h • Kiểm soát dòng tiền gian lận",
+        trustProfile = SheTrustProfile(
+            score = 100,
+            badge = TrustBadgeType.QUEEN_CLOSET,
+            status = EkycStatus.VERIFIED,
+            completedOrdersCount = 999,
+            disputeFreeStreakMonths = 24
+        ),
+        wallet = Wallet(
+            availableBalance = 99999000L,
+            escrowHoldBalance = 15400000L,
+            pendingWithdrawal = 0L,
+            transactions = emptyList()
+        )
+    )
+
+    val initialUser = demoBuyerUser
 
     val notifications = listOf(
         AppNotification(
@@ -485,7 +718,7 @@ object MockData {
         ),
         AppNotification(
             id = "notif_03",
-            title = "Lời mời trao đổi đồ mới 🔄",
+            title = "Lời mời trao đổi đồ mới ⇄",
             message = "Linh's Closet muốn trao đổi chiếc váy floral silk với blazer của bạn.",
             timestamp = "Hôm qua",
             isRead = true,
@@ -757,7 +990,31 @@ object MockData {
         com.swapshe.app.model.DisputeReport(
             id = "disp_001",
             reporterId = "user_my",
-            reporterName = "Hoàng My",
+            reporterName = "Hoàng My (Buyer 👩)",
+            targetType = com.swapshe.app.model.DisputeTargetType.ORDER,
+            targetId = "order_001",
+            targetTitle = "Đơn hàng #SW-20261014-001 (Đầm Maxi Hoa Bloom)",
+            reason = "Hàng bị ố vàng nách áo và rách nhẹ đường chỉ",
+            description = "Tôi nhận hàng mở ra kiểm tra thấy vết ố vàng không đúng với cam kết Like New 99% của shop. Đã quay video unbox đầy đủ.",
+            status = com.swapshe.app.model.DisputeStatus.UNDER_REVIEW,
+            requestedRefundAmount = 145000L,
+            sellerOffer = com.swapshe.app.model.DisputeOffer(
+                type = com.swapshe.app.model.DisputeOfferType.PARTIAL_REFUND,
+                amount = 45000L,
+                note = "Shop xin lỗi vì sơ suất của nhân viên soạn đồ, xin gửi hoàn bạn 45.000đ giữ áo."
+            ),
+            evidencePhotos = listOf(
+                "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80",
+                "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=800&q=80"
+            ),
+            evidenceVideoUrl = "https://assets.mixkit.co/videos/preview/mixkit-hands-opening-a-clothing-package-41484-large.mp4",
+            createdAt = "Hôm nay lúc 10:15",
+            resolutionNote = null
+        ),
+        com.swapshe.app.model.DisputeReport(
+            id = "disp_002",
+            reporterId = "user_my",
+            reporterName = "Hoàng My (Buyer 👩)",
             targetType = com.swapshe.app.model.DisputeTargetType.ORDER,
             targetId = "order_004",
             targetTitle = "Đơn hàng SW-20261008-015",
@@ -765,7 +1022,7 @@ object MockData {
             description = "Người bán hẹn gửi hàng nhưng quá 48h chưa gửi và không phản hồi tin nhắn.",
             status = com.swapshe.app.model.DisputeStatus.RESOLVED,
             createdAt = "09/10/2026 10:00",
-            resolutionNote = "Đã hỗ trợ người mua hủy đơn và hoàn tiền mô phỏng thành công."
+            resolutionNote = "Đã hỗ trợ người mua hủy đơn và Escrow hoàn tiền 100% thành công."
         )
     )
 }

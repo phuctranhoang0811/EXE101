@@ -77,6 +77,7 @@ fun ExploreScreen(
 ) {
     val repository = SwapSheRepository.instance
     val products by repository.products.collectAsState()
+    val user by repository.currentUser.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(initialCategory ?: "All") }
@@ -292,10 +293,17 @@ fun ExploreScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(resultList, key = { it.id }) { product ->
+                    val matchBadge = when {
+                        user.sizePreference != null && product.size.equals(user.sizePreference, ignoreCase = true) -> "Hợp 95% số đo"
+                        user.stylePreferences.any { it.equals(product.style, ignoreCase = true) } -> "Hợp 90% gu bạn"
+                        product.grade == com.swapshe.app.model.SwapSheGrade.GRADE_S -> "Tuyển chọn S"
+                        else -> null
+                    }
                     ProductCard(
                         product = product,
                         onClick = { onNavigateToProduct(product.id) },
                         onLikeToggle = { repository.toggleLike(product.id) },
+                        matchBadgeText = matchBadge,
                         modifier = Modifier.animateItem()
                     )
                 }

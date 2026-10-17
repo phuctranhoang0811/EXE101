@@ -22,12 +22,18 @@ import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,12 +90,16 @@ fun SwapDetailScreen(
         return
     }
 
-    val isUserA = user.id == transaction.userAId
+    var simulatedSideIsA by remember(transaction.id, user.id) {
+        mutableStateOf(user.id != transaction.userBId)
+    }
+    val isUserA = simulatedSideIsA
     val myItem = if (isUserA) transaction.productA else transaction.productB
     val theirItem = if (isUserA) transaction.productB else transaction.productA
     val myShipment = if (isUserA) transaction.shipmentAtoB else transaction.shipmentBtoA
     val theirShipment = if (isUserA) transaction.shipmentBtoA else transaction.shipmentAtoB
     val partnerName = if (isUserA) transaction.userBName else transaction.userAName
+    val myRoleName = if (isUserA) transaction.userAName else transaction.userBName
 
     Column(
         modifier = Modifier
@@ -123,6 +133,54 @@ fun SwapDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // Dynamic Perspective Switcher (Người mua A ⇄ Người bán B)
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = PrimarySoft15,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.35f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Đang xem giao diện với vai trò:",
+                            fontSize = 10.sp,
+                            color = TextSecondary
+                        )
+                        Text(
+                            text = if (isUserA) "👩 $myRoleName (Bên A)" else "👗 $myRoleName (Bên B)",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Primary,
+                        modifier = Modifier.clickable { simulatedSideIsA = !simulatedSideIsA }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Filled.SwapHoriz, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Đổi góc nhìn A ⇄ B",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
             // Status Header
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -134,7 +192,7 @@ fun SwapDetailScreen(
                         text = if (transaction.status == SwapTransactionStatus.COMPLETED)
                             "🎉 Giao dịch trao đổi đã hoàn tất!"
                         else
-                            "🔄 Tiến trình: ${transaction.status.label}",
+                            "Tiến trình: ${transaction.status.label}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (transaction.status == SwapTransactionStatus.COMPLETED) SuccessGreen else Primary
@@ -145,6 +203,87 @@ fun SwapDetailScreen(
                         color = TextSecondary,
                         modifier = Modifier.padding(top = 4.dp)
                     )
+                }
+            }
+
+            // Escrow Guarantee Card (Flow C: 50.000đ cọc mỗi bên)
+            val myEscrowPaid = if (isUserA) transaction.isEscrowDepositedA else transaction.isEscrowDepositedB
+            val theirEscrowPaid = if (isUserA) transaction.isEscrowDepositedB else transaction.isEscrowDepositedA
+
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceWhite,
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (myEscrowPaid && theirEscrowPaid) SuccessGreen.copy(alpha = 0.5f) else BorderColor),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🛡️ Cọc bảo đảm Escrow", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Spacer(modifier = Modifier.size(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (myEscrowPaid && theirEscrowPaid) SuccessGreen.copy(alpha = 0.15f) else WarningAmber.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = if (myEscrowPaid && theirEscrowPaid) "Đã bảo hiểm" else "Chờ ký quỹ",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (myEscrowPaid && theirEscrowPaid) SuccessGreen else WarningAmber,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(text = "50.000đ / bên", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Primary)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Để chống bom hàng và tráo đồ, mỗi bên ký quỹ 50.000đ qua Escrow. Khoản cọc sẽ tự động hoàn lại ví 100% ngay khi hai bên xác nhận nhận đủ đồ.",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Bạn: " + if (myEscrowPaid) "✓ Đã cọc 50.000đ" else "Chưa cọc",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (myEscrowPaid) SuccessGreen else TextMuted
+                        )
+                        Text(
+                            text = "$partnerName: " + if (theirEscrowPaid) "✓ Đã cọc 50.000đ" else "Chưa cọc",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (theirEscrowPaid) SuccessGreen else TextMuted
+                        )
+                    }
+
+                    if (!myEscrowPaid) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        PrimaryButton(
+                            text = "🛡️ Ký quỹ cọc Escrow 50.000đ ngay",
+                            onClick = { repository.depositSwapEscrow(transaction.id, isUserA) }
+                        )
+                    } else if (!theirEscrowPaid) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SecondaryButton(
+                            text = "⚡ Demo: Mô phỏng $partnerName đã cọc",
+                            onClick = { repository.depositSwapEscrow(transaction.id, !isUserA) }
+                        )
+                    }
                 }
             }
 

@@ -15,6 +15,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize SQLite local database for User Closet CRUD
+        com.swapshe.app.data.SwapSheRepository.instance.initDatabase(applicationContext)
+
         // Configure hardware-accelerated memory and disk image caching
         val imageLoader = ImageLoader.Builder(this)
             .memoryCache {

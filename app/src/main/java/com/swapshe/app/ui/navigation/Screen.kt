@@ -44,7 +44,9 @@ sealed class Screen(val route: String) {
     object CreateSwapOffer : Screen("swap/offer/new?targetId={targetId}") {
         fun createRoute(targetId: String) = "swap/offer/new?targetId=$targetId"
     }
-    object SwapRequests : Screen("swap/requests")
+    object SwapRequests : Screen("swap/requests?tab={tab}") {
+        fun createRoute(initialTab: Int = 0) = "swap/requests?tab=$initialTab"
+    }
     object SwapDetail : Screen("swap/{id}") {
         fun createRoute(id: String) = "swap/$id"
     }
@@ -55,4 +57,24 @@ sealed class Screen(val route: String) {
             "report?targetType=$targetType&targetId=$targetId&targetTitle=${java.net.URLEncoder.encode(targetTitle, "UTF-8")}"
     }
     object Notifications : Screen("notifications")
+
+    // Flow G: Cashflow & Escrow Wallet
+    object Wallet : Screen("wallet")
+
+    // Flow H: eKYC & She-Trust Verification
+    object Ekyc : Screen("ekyc")
+
+    // Flow D: Extended Dispute Details & Negotiation
+    object DisputeDetail : Screen("dispute/{id}") {
+        fun createRoute(id: String) = "dispute/$id"
+    }
+
+    // Flow C & Flow H: Direct Chat & Anti-Scam Protection
+    object Chat : Screen("chat?targetName={targetName}&productId={productId}") {
+        fun createRoute(targetName: String = "Người bán", productId: String? = null) =
+            "chat?targetName=${java.net.URLEncoder.encode(targetName, "UTF-8")}&productId=${productId ?: ""}"
+    }
+
+    // Flow D: Admin Arbitration & Platform Governance
+    object AdminDashboard : Screen("admin/dashboard")
 }

@@ -19,11 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,18 +59,19 @@ import com.swapshe.app.theme.WarmCream
 fun NotificationCenterScreen(
     onNavigateBack: () -> Unit,
     onNavigateToOrders: () -> Unit,
-    onNavigateToSwap: () -> Unit
+    onNavigateToSwap: () -> Unit,
+    onNavigateToProduct: (String) -> Unit = {}
 ) {
     val repository = SwapSheRepository.instance
     val notifications by repository.notifications.collectAsState()
 
-    val tabs = listOf("Tất cả", "Đơn hàng", "Đổi đồ", "Khuyến mãi")
+    val tabs = listOf("Tất cả", "Đơn hàng", "Đổi đồ", "Khuyến mãi & Tìm kiếm")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     val filteredList = when (selectedTabIndex) {
         1 -> notifications.filter { it.type == "order" }
         2 -> notifications.filter { it.type == "swap" }
-        3 -> notifications.filter { it.type == "price_drop" }
+        3 -> notifications.filter { it.type == "price_drop" || it.type == "saved_search_match" }
         else -> notifications
     }
 
@@ -159,8 +161,13 @@ fun NotificationCenterScreen(
                         notification = notif,
                         onClick = {
                             repository.markNotificationAsRead(notif.id)
-                            if (notif.type == "order") onNavigateToOrders()
-                            else if (notif.type == "swap") onNavigateToSwap()
+                            if (notif.targetProductId != null) {
+                                onNavigateToProduct(notif.targetProductId)
+                            } else if (notif.type == "order") {
+                                onNavigateToOrders()
+                            } else if (notif.type == "swap") {
+                                onNavigateToSwap()
+                            }
                         }
                     )
                 }
@@ -175,8 +182,9 @@ private fun NotificationItemCard(
     onClick: () -> Unit
 ) {
     val (icon, iconTint) = when (notification.type) {
-        "swap" -> Pair(Icons.Filled.Sync, Primary)
+        "swap" -> Pair(Icons.Filled.SwapHoriz, Primary)
         "price_drop" -> Pair(Icons.Filled.LocalOffer, Primary)
+        "saved_search_match" -> Pair(Icons.Filled.AutoAwesome, Primary)
         else -> Pair(Icons.Filled.ShoppingBag, Primary)
     }
 

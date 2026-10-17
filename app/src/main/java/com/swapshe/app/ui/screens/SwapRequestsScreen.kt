@@ -61,6 +61,7 @@ import com.swapshe.app.ui.components.SecondaryButton
 
 @Composable
 fun SwapRequestsScreen(
+    initialTab: Int = 0,
     onNavigateBack: () -> Unit,
     onNavigateToSwapDetail: (String) -> Unit
 ) {
@@ -68,7 +69,7 @@ fun SwapRequestsScreen(
     val user by repository.currentUser.collectAsState()
     val swapOffers by repository.swapOffers.collectAsState()
 
-    var selectedTabIndex by remember { mutableIntStateOf(0) } // 0: Received (Lời mời nhận được), 1: Sent (Đã gửi)
+    var selectedTabIndex by remember { mutableIntStateOf(initialTab) } // 0: Received (Lời mời nhận được), 1: Sent (Đã gửi)
 
     val receivedOffers = swapOffers.filter { it.recipientId == user.id }
     val sentOffers = swapOffers.filter { it.senderId == user.id }
@@ -144,9 +145,9 @@ fun SwapRequestsScreen(
                         offer = offer,
                         isReceived = selectedTabIndex == 0,
                         onAccept = {
-                            val success = repository.acceptSwapOffer(offer.id)
-                            if (success && offer.swapTransactionId != null) {
-                                onNavigateToSwapDetail(offer.swapTransactionId)
+                            val createdTxId = repository.acceptSwapOffer(offer.id)
+                            if (createdTxId != null) {
+                                onNavigateToSwapDetail(createdTxId)
                             }
                         },
                         onReject = { repository.rejectSwapOffer(offer.id) },
@@ -210,7 +211,7 @@ private fun SwapOfferCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Item 1
+                // Item 1: Offered item (Món của người gửi lời mời)
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     AsyncImage(
                         model = offer.offeredProduct.images.firstOrNull(),
@@ -219,7 +220,12 @@ private fun SwapOfferCard(
                         modifier = Modifier.size(54.dp).clip(RoundedCornerShape(8.dp))
                     )
                     Column(modifier = Modifier.padding(start = 8.dp)) {
-                        Text(text = "Đổi món:", fontSize = 10.sp, color = TextMuted)
+                        Text(
+                            text = if (isReceived) "Họ mang đổi:" else "Món của bạn:",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Primary
+                        )
                         Text(text = offer.offeredProduct.title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1)
                         Text(text = "Size ${offer.offeredProduct.size}", fontSize = 10.sp, color = TextSecondary)
                     }
@@ -227,7 +233,7 @@ private fun SwapOfferCard(
 
                 Icon(imageVector = Icons.Filled.SwapHoriz, contentDescription = null, tint = Primary, modifier = Modifier.size(24.dp).padding(horizontal = 4.dp))
 
-                // Item 2
+                // Item 2: Requested item (Món được yêu cầu đổi)
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     AsyncImage(
                         model = offer.requestedProduct.images.firstOrNull(),
@@ -236,7 +242,12 @@ private fun SwapOfferCard(
                         modifier = Modifier.size(54.dp).clip(RoundedCornerShape(8.dp))
                     )
                     Column(modifier = Modifier.padding(start = 8.dp)) {
-                        Text(text = "Lấy món:", fontSize = 10.sp, color = TextMuted)
+                        Text(
+                            text = if (isReceived) "Muốn lấy đồ của bạn:" else "Muốn đổi lấy:",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextMuted
+                        )
                         Text(text = offer.requestedProduct.title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1)
                         Text(text = "Size ${offer.requestedProduct.size}", fontSize = 10.sp, color = TextSecondary)
                     }

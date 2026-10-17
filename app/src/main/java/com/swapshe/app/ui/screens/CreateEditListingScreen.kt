@@ -105,7 +105,7 @@ fun CreateEditListingScreen(
     var allowSwap by remember { mutableStateOf(existingProduct?.canSwap ?: true) }
     var allowBuy by remember { mutableStateOf(existingProduct?.allowBuy ?: true) }
 
-    // Photos
+    // Photos & 4-Angles (Flow I)
     var imageList by remember {
         mutableStateOf(
             existingProduct?.images?.ifEmpty { null }
@@ -115,16 +115,51 @@ fun CreateEditListingScreen(
                 )
         )
     }
+    var hasFrontAngle by remember { mutableStateOf(true) }
+    var hasBackAngle by remember { mutableStateOf(true) }
+    var hasTagAngle by remember { mutableStateOf(true) }
+    var hasDefectAngle by remember { mutableStateOf(false) }
+    var hasVideoRecorded by remember { mutableStateOf(false) }
 
-    val steps = listOf("1. Ảnh chụp", "2. Chi tiết", "3. Số đo & Tình trạng", "4. Giá & Đổi đồ")
+    // Condition Checklist (Flow I)
+    var isOriginalTag by remember { mutableStateOf(true) }
+    var isWornOnceOrTwice by remember { mutableStateOf(true) }
+    var isPristineFabric by remember { mutableStateOf(true) }
+    var hasMinorStain by remember { mutableStateOf(false) }
+    var hasMissingButton by remember { mutableStateOf(false) }
+    var flawNote by remember { mutableStateOf("") }
+
+    // Auto grading calculation
+    val calculatedGrade = remember(isOriginalTag, isWornOnceOrTwice, isPristineFabric, hasMinorStain, hasMissingButton) {
+        if ((isOriginalTag || isWornOnceOrTwice) && isPristineFabric && !hasMinorStain && !hasMissingButton) {
+            com.swapshe.app.model.SwapSheGrade.GRADE_S
+        } else if (isPristineFabric && !hasMinorStain && !hasMissingButton) {
+            com.swapshe.app.model.SwapSheGrade.GRADE_A
+        } else {
+            com.swapshe.app.model.SwapSheGrade.GRADE_B
+        }
+    }
+
+    val steps = listOf("1. Ảnh 4 góc", "2. Chi tiết", "3. Phân hạng & Đo", "4. Giá & Đổi đồ")
 
     fun buildProduct(isPublish: Boolean): Product {
+        val flawsList = mutableListOf<String>()
+        if (hasMinorStain) flawsList.add("Có vết ố nhỏ khó thấy đã báo trước")
+        if (hasMissingButton) flawsList.add("Mất cúc phụ / Khóa hơi rít đã xử lý")
+        if (flawNote.isNotBlank()) flawsList.add(flawNote)
+
         return Product(
             id = existingProduct?.id ?: "prod_${System.currentTimeMillis()}",
             title = title.ifBlank { "Món đồ Vintage" },
             brand = brand.ifBlank { "Thương hiệu tuyển chọn" },
             price = priceText.toLongOrNull() ?: 100000L,
-            condition = condition,
+            condition = when (calculatedGrade) {
+                com.swapshe.app.model.SwapSheGrade.GRADE_S -> ConditionType.LIKE_NEW
+                com.swapshe.app.model.SwapSheGrade.GRADE_A -> ConditionType.EXCELLENT
+                com.swapshe.app.model.SwapSheGrade.GRADE_B -> ConditionType.GOOD
+            },
+            grade = calculatedGrade,
+            flaws = flawsList,
             size = sizeLabel,
             category = category,
             style = style,
@@ -236,41 +271,96 @@ fun CreateEditListingScreen(
         ) {
             when (currentStep) {
                 1 -> {
-                    // STEP 1: Photos
-                    Text(text = "Hình ảnh món đồ (Tối thiểu 2 ảnh)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text(text = "Chụp rõ dáng áo, nhãn mác, chi tiết đường may và khuyết điểm (nếu có).", fontSize = 12.sp, color = TextSecondary)
+                    // STEP 1: Photos & 4 Mandatory Angles (Flow I)
+                    Text(text = "Chụp 4 góc quy chuẩn & Video (Flow I)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(text = "Chụp đủ 4 góc bắt buộc giúp tin đăng được duyệt nhanh và tăng 90% khả năng chốt đơn.", fontSize = 12.sp, color = TextSecondary)
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        imageList.forEach { url ->
-                            AsyncImage(
-                                model = url,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
-                            )
+                    // 4-Angle Grid
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Angle 1: Front
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = SurfaceWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (hasFrontAngle) Primary else BorderColor),
+                            modifier = Modifier.weight(1f).clickable { hasFrontAngle = true }
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "1. Mặt trước *", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Primary)
+                                Box(modifier = Modifier.size(60.dp).padding(top = 4.dp).clip(RoundedCornerShape(6.dp)).background(PrimarySoft15), contentAlignment = Alignment.Center) {
+                                    Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = Primary, modifier = Modifier.size(20.dp))
+                                }
+                            }
                         }
 
-                        // Add photo mockup
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(SurfaceWhite)
-                                .border(1.dp, Primary.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                                .clickable {
-                                    imageList = imageList + "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80"
-                                    repository.showToast("Đã thêm ảnh minh chứng từ thư viện!")
-                                },
-                            contentAlignment = Alignment.Center
+                        // Angle 2: Back
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = SurfaceWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (hasBackAngle) Primary else BorderColor),
+                            modifier = Modifier.weight(1f).clickable { hasBackAngle = true }
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(imageVector = Icons.Filled.AddPhotoAlternate, contentDescription = null, tint = Primary)
-                                Text(text = "+ Thêm ảnh", fontSize = 11.sp, color = Primary, fontWeight = FontWeight.Medium)
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "2. Mặt sau *", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Primary)
+                                Box(modifier = Modifier.size(60.dp).padding(top = 4.dp).clip(RoundedCornerShape(6.dp)).background(PrimarySoft15), contentAlignment = Alignment.Center) {
+                                    Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = Primary, modifier = Modifier.size(20.dp))
+                                }
                             }
+                        }
+
+                        // Angle 3: Tag / Label
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = SurfaceWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (hasTagAngle) Primary else BorderColor),
+                            modifier = Modifier.weight(1f).clickable { hasTagAngle = true }
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "3. Tem mác *", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Primary)
+                                Box(modifier = Modifier.size(60.dp).padding(top = 4.dp).clip(RoundedCornerShape(6.dp)).background(PrimarySoft15), contentAlignment = Alignment.Center) {
+                                    Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = Primary, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
+
+                        // Angle 4: Flaw / Details
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = SurfaceWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (hasDefectAngle) Primary else BorderColor),
+                            modifier = Modifier.weight(1f).clickable { hasDefectAngle = !hasDefectAngle }
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "4. Vết lỗi", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                Box(modifier = Modifier.size(60.dp).padding(top = 4.dp).clip(RoundedCornerShape(6.dp)).background(BackgroundSubtle), contentAlignment = Alignment.Center) {
+                                    Text(text = if (hasDefectAngle) "✓ Đã chụp" else "+ Chụp", fontSize = 9.sp, color = TextMuted)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Video upload slot
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (hasVideoRecorded) PrimarySoft15 else SurfaceWhite,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (hasVideoRecorded) Primary else BorderColor),
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            hasVideoRecorded = !hasVideoRecorded
+                            repository.showToast(if (hasVideoRecorded) "Đã ghi nhận video ngắn kiểm tra áo (7s)!" else "Đã xóa video")
+                        }
+                    ) {
+                        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Filled.AddPhotoAlternate, contentDescription = null, tint = Primary, modifier = Modifier.size(24.dp))
+                            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                                Text(text = "🎥 Video ngắn 5–10s quay cận chất vải", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                Text(text = if (hasVideoRecorded) "✓ Đã đính kèm video kiểm tra phom dáng & ánh sáng thực" else "Tùy chọn • Tăng uy tín She-Trust Score", fontSize = 11.sp, color = TextSecondary)
+                            }
+                            Text(text = if (hasVideoRecorded) "Đã thêm" else "+ Quay", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Primary)
                         }
                     }
                 }
@@ -315,42 +405,94 @@ fun CreateEditListingScreen(
                 }
 
                 3 -> {
-                    // STEP 3: Measurements & Condition
-                    Text(text = "Tình trạng & Số đo thực tế", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text(text = "Số đo đo tay giúp người mua đối chiếu độ vừa vặn chính xác.", fontSize = 12.sp, color = TextSecondary)
+                    // STEP 3: Condition Checklist & Auto Grading (Flow I)
+                    Text(text = "Checklist Tình trạng & Phân hạng SwapShe", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(text = "Tích chọn đúng thực tế để hệ thống tự động gán nhãn Hạng S, Hạng A hoặc Hạng B.", fontSize = 12.sp, color = TextSecondary)
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Condition selector
-                    Text(text = "Tình trạng sản phẩm:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                    Row(
+                    // Checklist items
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .background(SurfaceWhite, RoundedCornerShape(12.dp))
+                            .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
+                            .padding(8.dp)
                     ) {
-                        ConditionType.values().forEach { c ->
-                            val isSel = condition == c
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (isSel) Primary else SurfaceWhite,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) Primary else BorderColor),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { condition = c }
-                            ) {
-                                Text(
-                                    text = c.label,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (isSel) Color.White else TextPrimary,
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                            }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { isOriginalTag = !isOriginalTag }) {
+                            Checkbox(checked = isOriginalTag, onCheckedChange = { isOriginalTag = it }, colors = CheckboxDefaults.colors(checkedColor = Primary))
+                            Text(text = "Còn nguyên tag mác của hãng (Chưa cắt tag)", fontSize = 12.sp, color = TextPrimary)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { isWornOnceOrTwice = !isWornOnceOrTwice }) {
+                            Checkbox(checked = isWornOnceOrTwice, onCheckedChange = { isWornOnceOrTwice = it }, colors = CheckboxDefaults.colors(checkedColor = Primary))
+                            Text(text = "Chỉ mặc 1–2 lần chụp ảnh, chất vải nguyên bản", fontSize = 12.sp, color = TextPrimary)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { isPristineFabric = !isPristineFabric }) {
+                            Checkbox(checked = isPristineFabric, onCheckedChange = { isPristineFabric = it }, colors = CheckboxDefaults.colors(checkedColor = Primary))
+                            Text(text = "Vải không sờn rách, không xù lông sợi dệt", fontSize = 12.sp, color = TextPrimary)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { hasMinorStain = !hasMinorStain }) {
+                            Checkbox(checked = hasMinorStain, onCheckedChange = { hasMinorStain = it }, colors = CheckboxDefaults.colors(checkedColor = Primary))
+                            Text(text = "Có vết ố mờ / sờn nhẹ khó thấy (đã chụp ở góc 4)", fontSize = 12.sp, color = TextPrimary)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { hasMissingButton = !hasMissingButton }) {
+                            Checkbox(checked = hasMissingButton, onCheckedChange = { hasMissingButton = it }, colors = CheckboxDefaults.colors(checkedColor = Primary))
+                            Text(text = "Mất cúc phụ / Khóa kéo hơi rít đã xử lý", fontSize = 12.sp, color = TextPrimary)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Auto Grading Result Banner
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = PrimarySoft15,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Primary),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = "Hệ thống tự động gán nhãn:", fontSize = 11.sp, color = TextSecondary)
+                                Box(
+                                    modifier = Modifier
+                                        .background(Primary, RoundedCornerShape(100.dp))
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "${calculatedGrade.code}: ${calculatedGrade.label}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                            Text(
+                                text = calculatedGrade.description,
+                                fontSize = 12.sp,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = flawNote,
+                        onValueChange = { flawNote = it },
+                        label = { Text("Ghi chú khuyết điểm minh bạch cho Buyer (nếu có)") },
+                        placeholder = { Text("VD: Cúc áo thứ 2 hơi lỏng nhẹ...", fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(text = "Số đo đo tay thực tế (cm):", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // Measurements inputs
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

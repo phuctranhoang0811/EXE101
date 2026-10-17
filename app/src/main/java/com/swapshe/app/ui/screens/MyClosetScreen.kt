@@ -25,7 +25,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -39,8 +40,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import java.text.NumberFormat
+import java.util.Locale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,20 +72,34 @@ import com.swapshe.app.theme.WarmCream
 import com.swapshe.app.theme.WarningAmber
 import com.swapshe.app.ui.components.PrimaryButton
 import com.swapshe.app.ui.components.SecondaryButton
-import java.text.NumberFormat
-import java.util.Locale
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
+import com.swapshe.app.model.EkycStatus
 
 @Composable
 fun MyClosetScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCreateListing: (String?) -> Unit,
     onNavigateToSellerOrders: () -> Unit,
-    onPreviewProduct: (String) -> Unit
+    onPreviewProduct: (String) -> Unit,
+    onNavigateToEkyc: () -> Unit = {}
 ) {
     val repository = SwapSheRepository.instance
     val user by repository.currentUser.collectAsState()
     val closetProducts by repository.myCloset.collectAsState()
     val sellerOrders by repository.sellerOrders.collectAsState()
+
+    var showEkycModal by remember { mutableStateOf(false) }
+
+    fun checkAndNavigateToCreate(id: String?) {
+        if (user.trustProfile.status != EkycStatus.VERIFIED) {
+            showEkycModal = true
+        } else {
+            onNavigateToCreateListing(id)
+        }
+    }
 
     val tabs = listOf("Tất cả", "Đang bán", "Đã giữ chỗ", "Đã bán", "Bản nháp")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -203,7 +221,7 @@ fun MyClosetScreen(
                         )
                         PrimaryButton(
                             text = "+ Đăng món đầu tiên",
-                            onClick = { onNavigateToCreateListing(null) }
+                            onClick = { checkAndNavigateToCreate(null) }
                         )
                     }
                 }
@@ -231,7 +249,7 @@ fun MyClosetScreen(
 
         // Floating Action Button to add item
         FloatingActionButton(
-            onClick = { onNavigateToCreateListing(null) },
+            onClick = { checkAndNavigateToCreate(null) },
             containerColor = Primary,
             contentColor = Color.White,
             shape = RoundedCornerShape(16.dp),
@@ -251,6 +269,57 @@ fun MyClosetScreen(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+        }
+
+        // eKYC Gate Modal Dialog (Flow B & Flow H)
+        if (showEkycModal) {
+            AlertDialog(
+                onDismissRequest = { showEkycModal = false },
+                title = {
+                    Text(
+                        text = "🛡️ Yêu cầu xác thực eKYC",
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Để bảo vệ an toàn cho cộng đồng và kích hoạt tính năng Đăng bán / Trao đổi, bạn vui lòng hoàn tất định danh eKYC (chụp CCCD & khuôn mặt).",
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "✨ Sau khi xác thực: Đạt huy hiệu Queen Closet 👑, tăng điểm tín nhiệm She-Trust lên 98/100 và giảm 50% phí dịch vụ sàn!",
+                            fontSize = 12.sp,
+                            color = Primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showEkycModal = false
+                            onNavigateToEkyc()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Text("Xác thực ngay ✨", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEkycModal = false }) {
+                        Text("Để sau", color = TextSecondary)
+                    }
+                },
+                containerColor = SurfaceWhite,
+                shape = RoundedCornerShape(18.dp)
+            )
         }
     }
 }
@@ -349,12 +418,23 @@ private fun ClosetItemCard(
                             shape = RoundedCornerShape(6.dp),
                             color = BackgroundSubtle
                         ) {
-                            Text(
-                                text = "🔄 Cho phép đổi đồ",
-                                fontSize = 10.sp,
-                                color = TextSecondary,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.SwapHoriz,
+                                    contentDescription = null,
+                                    tint = Primary,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "Đổi đồ 1-1",
+                                    fontSize = 10.sp,
+                                    color = TextSecondary
+                                )
+                            }
                         }
                     } else {
                         Spacer(modifier = Modifier.size(1.dp))

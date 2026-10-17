@@ -1,6 +1,9 @@
 package com.swapshe.app.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -24,8 +28,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Tune
+import com.swapshe.app.ui.components.VirtualFitStudioSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,20 +54,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.swapshe.app.R
 import com.swapshe.app.data.MockData
 import com.swapshe.app.data.SwapSheRepository
+import com.swapshe.app.model.BodyMeasurements
 import com.swapshe.app.ui.components.CategoryPill
+import com.swapshe.app.ui.components.FitAssistantBottomSheet
 import com.swapshe.app.ui.components.ProductCard
+import com.swapshe.app.ui.components.SecondaryButton
 import com.swapshe.app.ui.components.TextLinkButton
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.Primary
 import com.swapshe.app.theme.PrimarySoft
+import com.swapshe.app.theme.PrimarySoft15
 import com.swapshe.app.theme.SurfaceWhite
 import com.swapshe.app.theme.TextMuted
 import com.swapshe.app.theme.TextPrimary
@@ -78,13 +93,21 @@ fun HomeScreen(
     val notifications by repository.notifications.collectAsState()
 
     var selectedCategory by remember { mutableStateOf("All") }
+    var selectedSize by remember { mutableStateOf("All") }
     var showNotificationsSheet by remember { mutableStateOf(false) }
+    var showFitAssistant by remember { mutableStateOf(false) }
+    var showVirtualFitStudio by remember { mutableStateOf(false) }
+    var customFitAppliedInfo by remember { mutableStateOf<String?>(null) }
 
-    val filteredProducts = remember(products, selectedCategory) {
-        if (selectedCategory == "All") {
-            products
-        } else {
-            products.filter { it.category.equals(selectedCategory, ignoreCase = true) }
+    val filteredProducts = remember(products, selectedCategory, selectedSize) {
+        products.filter { product ->
+            val matchCategory = selectedCategory == "All" || product.category.equals(selectedCategory, ignoreCase = true)
+            val matchSize = if (selectedSize == "All") {
+                true
+            } else {
+                product.size.equals(selectedSize, ignoreCase = true) || product.size.equals("Free", ignoreCase = true)
+            }
+            matchCategory && matchSize
         }
     }
 
@@ -117,6 +140,10 @@ fun HomeScreen(
                             .padding(bottom = 10.dp)
                             .clickable {
                                 repository.markNotificationAsRead(notif.id)
+                                showNotificationsSheet = false
+                                if (notif.targetProductId != null) {
+                                    onNavigateToProduct(notif.targetProductId)
+                                }
                             }
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
@@ -171,20 +198,33 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "SWAPSHE",
-                        fontFamily = FontFamily.Serif,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Primary,
-                        letterSpacing = 1.sp
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "SwapShe Logo",
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
                     )
-                    Text(
-                        text = if (user.isGuest) "Welcome Guest • Explore treasures" else "Xin chào, ${user.name} ✨",
-                        fontSize = 12.sp,
-                        color = TextSecondary
-                    )
+                    Column {
+                        Text(
+                            text = "SWAPSHE",
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = if (user.isGuest) "Welcome Guest • Khám phá đồ đẹp" else "Xin chào, ${user.name}",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
+                    }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -313,12 +353,171 @@ fun HomeScreen(
             }
         }
 
+        // Size Filter & Smart Fit Assistant Tool (Height, Weight, Measurements & Undertone)
+        item(span = { GridItemSpan(2) }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceWhite,
+                border = BorderStroke(1.dp, BorderColor),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Straighten,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Chọn Size vừa vặn:",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            // 2D Virtual Fit Studio Button
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Primary,
+                                modifier = Modifier.clickable { showVirtualFitStudio = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Checkroom,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Thử Đồ 2D",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+
+                            // Smart Fit Assistant Button
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = PrimarySoft15,
+                                border = BorderStroke(1.dp, Primary.copy(alpha = 0.45f)),
+                                modifier = Modifier.clickable { showFitAssistant = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Tune,
+                                        contentDescription = null,
+                                        tint = Primary,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Tính Size",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Size chips
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val sizeList = listOf("All", "XS", "S", "M", "L", "XL", "Free")
+                        items(sizeList) { sz ->
+                            val isSelected = selectedSize == sz
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Primary else BackgroundSubtle,
+                                border = BorderStroke(1.dp, if (isSelected) Primary else BorderColor),
+                                modifier = Modifier.clickable {
+                                    selectedSize = sz
+                                    if (sz == "All") customFitAppliedInfo = null
+                                }
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                                ) {
+                                    Text(
+                                        text = if (sz == "All") "Tất cả" else if (sz == "Free") "Freesize" else "Size $sz",
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Color.White else TextPrimary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Active Personalized Fit Badge
+                    if (customFitAppliedInfo != null && selectedSize != "All") {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = PrimarySoft15,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = customFitAppliedInfo ?: "",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "✕ Bỏ lọc",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Primary,
+                                    modifier = Modifier
+                                        .padding(start = 6.dp)
+                                        .clickable {
+                                            selectedSize = "All"
+                                            customFitAppliedInfo = null
+                                        }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Section: Picked For You
         item(span = { GridItemSpan(2) }) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -331,7 +530,9 @@ fun HomeScreen(
                         color = TextPrimary
                     )
                     Text(
-                        text = if (user.stylePreferences.isNotEmpty())
+                        text = if (selectedSize != "All")
+                            "Đang lọc ${filteredProducts.size} món vừa vặn Size $selectedSize & ${user.skinTone.substringBefore(" (")}"
+                        else if (user.stylePreferences.isNotEmpty())
                             "Phù hợp gu ${user.stylePreferences.first()} & Size ${user.sizePreference ?: "S"}"
                         else "Bộ sưu tập trending hôm nay",
                         fontSize = 11.sp,
@@ -346,12 +547,66 @@ fun HomeScreen(
             }
         }
 
+        // Empty state if 0 products match
+        if (filteredProducts.isEmpty()) {
+            item(span = { GridItemSpan(2) }) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = SurfaceWhite,
+                    border = BorderStroke(1.dp, BorderColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Straighten,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Chưa có món đồ Size $selectedSize trong danh mục này",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Thử chọn Tất cả size hoặc đổi sang danh mục thời trang khác nhé!",
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+                        )
+                        SecondaryButton(
+                            text = "Xem tất cả kích cỡ",
+                            onClick = {
+                                selectedSize = "All"
+                                selectedCategory = "All"
+                                customFitAppliedInfo = null
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
         // 2-Column Virtualized Product Grid
         items(filteredProducts, key = { it.id }) { product ->
+            val matchBadge = when {
+                user.sizePreference != null && product.size.equals(user.sizePreference, ignoreCase = true) -> "Hợp 95% số đo"
+                user.stylePreferences.any { it.equals(product.style, ignoreCase = true) } -> "Hợp 90% gu bạn"
+                product.grade == com.swapshe.app.model.SwapSheGrade.GRADE_S -> "Tuyển chọn S"
+                else -> null
+            }
             ProductCard(
                 product = product,
                 onClick = { onNavigateToProduct(product.id) },
                 onLikeToggle = { repository.toggleLike(product.id) },
+                matchBadgeText = matchBadge,
                 modifier = Modifier.animateItem()
             )
         }
@@ -359,5 +614,56 @@ fun HomeScreen(
         item(span = { GridItemSpan(2) }) {
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    if (showFitAssistant) {
+        FitAssistantBottomSheet(
+            initialHeightCm = user.bodyMeasurements?.heightCm ?: 158,
+            initialWeightKg = user.bodyMeasurements?.weightKg ?: 48,
+            initialBustCm = user.bodyMeasurements?.bustCm ?: 84,
+            initialWaistCm = user.bodyMeasurements?.waistCm ?: 64,
+            initialHipsCm = user.bodyMeasurements?.hipsCm ?: 90,
+            initialSkinTone = user.skinTone,
+            onDismissRequest = { showFitAssistant = false },
+            onApply = { size, heightCm, weightKg, bustCm, waistCm, hipsCm, skinTone ->
+                repository.updatePreferences(
+                    size = size,
+                    measurements = BodyMeasurements(
+                        heightCm = heightCm,
+                        weightKg = weightKg,
+                        bustCm = bustCm,
+                        waistCm = waistCm,
+                        hipsCm = hipsCm
+                    ),
+                    skinTone = skinTone
+                )
+                selectedSize = size
+                customFitAppliedInfo = "Chuẩn dáng: Size $size (${heightCm}cm • ${weightKg}kg • ${skinTone.substringBefore(" (")})"
+                showFitAssistant = false
+            }
+        )
+    }
+
+    if (showVirtualFitStudio) {
+        VirtualFitStudioSheet(
+            initialProduct = products.firstOrNull() ?: MockData.products.first(),
+            allProducts = products,
+            userHeightCm = user.bodyMeasurements?.heightCm ?: 158,
+            userBustCm = user.bodyMeasurements?.bustCm ?: 84,
+            userWaistCm = user.bodyMeasurements?.waistCm ?: 66,
+            userHipsCm = user.bodyMeasurements?.hipsCm ?: 90,
+            onDismissRequest = { showVirtualFitStudio = false },
+            onApplyMeasurements = { h, b, w, hp ->
+                repository.updatePreferences(
+                    measurements = BodyMeasurements(
+                        heightCm = h,
+                        weightKg = user.bodyMeasurements?.weightKg ?: 48,
+                        bustCm = b,
+                        waistCm = w,
+                        hipsCm = hp
+                    )
+                )
+            }
+        )
     }
 }

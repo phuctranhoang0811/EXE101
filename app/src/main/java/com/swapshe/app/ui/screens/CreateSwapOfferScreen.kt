@@ -301,7 +301,7 @@ fun CreateSwapOfferScreen(
         ) {
             Box(modifier = Modifier.padding(16.dp)) {
                 PrimaryButton(
-                    text = "Gửi đề nghị đổi đồ 🔄",
+                    text = "Gửi đề nghị trao đổi ⇄",
                     enabled = selectedMyProduct != null,
                     onClick = {
                         selectedMyProduct?.let { myItem ->

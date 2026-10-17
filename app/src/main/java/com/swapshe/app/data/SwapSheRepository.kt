@@ -19,6 +19,19 @@ import com.swapshe.app.model.SwapTransactionStatus
 import com.swapshe.app.model.TimelineEvent
 import com.swapshe.app.model.TwoWayShipment
 import com.swapshe.app.model.User
+import com.swapshe.app.model.UserRole
+import com.swapshe.app.model.ChatMessage
+import com.swapshe.app.model.Wallet
+import com.swapshe.app.model.WalletTransaction
+import com.swapshe.app.model.WalletTransactionType
+import com.swapshe.app.model.BankPayoutAccount
+import com.swapshe.app.model.EkycStatus
+import com.swapshe.app.model.EkycDocument
+import com.swapshe.app.model.SheTrustProfile
+import com.swapshe.app.model.TrustBadgeType
+import com.swapshe.app.model.DisputeOffer
+import com.swapshe.app.model.DisputeOfferType
+import com.swapshe.app.model.SwapSheGrade
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,8 +41,158 @@ import java.util.Locale
 
 class SwapSheRepository private constructor() {
 
+    // Role Switching for Demo & QA Architect Testing
+    private val _currentRole = MutableStateFlow(UserRole.BUYER)
+    val currentRole: StateFlow<UserRole> = _currentRole.asStateFlow()
+
+    // SQLite Database Helper for User Wardrobe/Closet CRUD
+    private var dbHelper: com.swapshe.app.data.db.SwapSheDbHelper? = null
+
+    fun initDatabase(context: android.content.Context) {
+        if (dbHelper == null) {
+            val helper = com.swapshe.app.data.db.SwapSheDbHelper(context.applicationContext)
+            dbHelper = helper
+
+            // Seed initial items if database is empty on first run
+            if (helper.getProductCount() == 0) {
+                // Seed My Closet items
+                MockData.myClosetInitial.forEach { helper.insertProduct(it) }
+                // Seed Seller Linh items
+                MockData.products.filter { it.seller.id == "seller_linh" }.forEach {
+                    helper.insertProduct(it.copy(ownerId = "seller_linh"))
+                }
+            }
+            refreshClosetFromDb()
+        }
+    }
+
+    private fun refreshClosetFromDb() {
+        val helper = dbHelper ?: return
+        val currentUserId = _currentUser.value.id
+        val items = helper.getProductsByOwner(currentUserId)
+        if (items.isNotEmpty()) {
+            _myCloset.value = items
+        } else if (_currentRole.value == UserRole.SELLER) {
+            _myCloset.value = helper.getProductsByOwner("seller_linh")
+        } else {
+            _myCloset.value = helper.getProductsByOwner("user_my")
+        }
+    }
+
+    fun setRole(role: UserRole) {
+        _currentRole.value = role
+        val newUser = when (role) {
+            UserRole.BUYER -> MockData.demoBuyerUser
+            UserRole.SELLER -> MockData.demoSellerUser
+            UserRole.ADMIN -> MockData.demoAdminUser
+        }
+        _currentUser.value = newUser
+        _wallet.value = newUser.wallet
+        _sheTrustProfile.value = newUser.trustProfile
+
+        val helper = dbHelper
+        if (helper != null) {
+            val userItems = helper.getProductsByOwner(newUser.id)
+            if (userItems.isNotEmpty()) {
+                _myCloset.value = userItems
+            } else if (role == UserRole.SELLER) {
+                _myCloset.value = helper.getProductsByOwner("seller_linh").ifEmpty {
+                    MockData.products.filter { it.seller.id == "seller_linh" } + MockData.myClosetInitial
+                }
+            } else {
+                _myCloset.value = helper.getProductsByOwner("user_my").ifEmpty {
+                    MockData.myClosetInitial
+                }
+            }
+        } else {
+            if (role == UserRole.SELLER) {
+                _myCloset.value = MockData.products.filter { it.seller.id == "seller_linh" } + MockData.myClosetInitial
+            } else {
+                _myCloset.value = MockData.myClosetInitial
+            }
+        }
+
+        showToast("Đã chuyển sang: ${role.icon} ${newUser.name}")
+    }
+
+    // Flow H & Flow C: Chat & Anti-Scam filter
+    private val _chatMessages = MutableStateFlow(
+        listOf(
+            ChatMessage(
+                id = "msg_01",
+                senderId = "seller_01",
+                senderName = "Vintage Chic Boutique",
+                text = "Chào bạn! Chiếc áo này là hàng tuyển Nhật còn mới 99% nguyên tag nhé.",
+                timestamp = "10:15",
+                isFromMe = false
+            ),
+            ChatMessage(
+                id = "msg_02",
+                senderId = "user_me",
+                senderName = "Hoàng My",
+                text = "Dạ áo này ngực 86cm mặc vừa không shop?",
+                timestamp = "10:17",
+                isFromMe = true
+            ),
+            ChatMessage(
+                id = "msg_03",
+                senderId = "seller_01",
+                senderName = "Vintage Chic Boutique",
+                text = "Vừa đẹp luôn nha bạn ơi! Áo co giãn nhẹ dáng cực tôn dáng.",
+                timestamp = "10:18",
+                isFromMe = false
+            )
+        )
+    )
+    val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
+
     private val _currentUser = MutableStateFlow(MockData.initialUser)
     val currentUser: StateFlow<User> = _currentUser.asStateFlow()
+
+    // Flow G: Escrow & Wallet State
+    private val _wallet = MutableStateFlow(
+        Wallet(
+            availableBalance = 1850000L,
+            escrowHoldBalance = 420000L,
+            pendingWithdrawal = 0L,
+            transactions = listOf(
+                WalletTransaction(
+                    id = "tx_01",
+                    type = WalletTransactionType.RELEASE_EARNING,
+                    amount = 304000L,
+                    title = "Doanh thu bán đồ (Đã trừ 5% phí sàn)",
+                    description = "Đơn hàng #SW-20261014-002 đã hoàn tất bảo hiểm 48h",
+                    timestamp = "14/10/2026 18:00",
+                    isPositive = true,
+                    orderCode = "SW-20261014-002"
+                ),
+                WalletTransaction(
+                    id = "tx_02",
+                    type = WalletTransactionType.ESCROW_HOLD,
+                    amount = 420000L,
+                    title = "Ký quỹ tạm giữ mua hàng",
+                    description = "Đang tạm giữ bảo vệ đơn #SW-20261015-881 trong 48h",
+                    timestamp = "15/10/2026 09:30",
+                    isPositive = false,
+                    orderCode = "SW-20261015-881"
+                ),
+                WalletTransaction(
+                    id = "tx_03",
+                    type = WalletTransactionType.WITHDRAW_BANK,
+                    amount = 1200000L,
+                    title = "Rút tiền về Vietcombank (*9812)",
+                    description = "Lệnh rút tiền về tài khoản ngân hàng thành công",
+                    timestamp = "12/10/2026 14:15",
+                    isPositive = false
+                )
+            )
+        )
+    )
+    val wallet: StateFlow<Wallet> = _wallet.asStateFlow()
+
+    // Flow H: She-Trust & eKYC State
+    private val _sheTrustProfile = MutableStateFlow(SheTrustProfile())
+    val sheTrustProfile: StateFlow<SheTrustProfile> = _sheTrustProfile.asStateFlow()
 
     // Public explore products
     private val _products = MutableStateFlow(MockData.products)
@@ -168,14 +331,16 @@ class SwapSheRepository private constructor() {
         styles: Set<String>? = null,
         size: String? = null,
         colors: Set<String>? = null,
-        measurements: BodyMeasurements? = null
+        measurements: BodyMeasurements? = null,
+        skinTone: String? = null
     ) {
         val curr = _currentUser.value
         _currentUser.value = curr.copy(
             stylePreferences = styles ?: curr.stylePreferences,
             sizePreference = size ?: curr.sizePreference,
             colorPreferences = colors ?: curr.colorPreferences,
-            bodyMeasurements = measurements ?: curr.bodyMeasurements
+            bodyMeasurements = measurements ?: curr.bodyMeasurements,
+            skinTone = skinTone ?: curr.skinTone
         )
     }
 
@@ -222,7 +387,7 @@ class SwapSheRepository private constructor() {
             timeline = listOf(
                 TimelineEvent(
                     if (isCod) "Order Placed (COD)" else "Payment confirmed",
-                    if (isCod) "Đơn hàng đã ghi nhận phương thức thanh toán khi nhận hàng" else "Mô phỏng thanh toán đã xác thực",
+                    if (isCod) "Đơn hàng đã ghi nhận phương thức thanh toán khi nhận hàng" else "Đã thanh toán qua Ví Ký Quỹ Escrow an toàn",
                     timeNow,
                     true
                 ),
@@ -235,18 +400,45 @@ class SwapSheRepository private constructor() {
             if (it.id == product.id) it.copy(status = ProductStatus.SOLD) else it
         }
 
+        // Two-way synchronization: Both Buyer and Seller lists see the order
         _orders.value = listOf(newOrder) + _orders.value
+        _sellerOrders.value = listOf(newOrder) + _sellerOrders.value
+
+        // Flow G: Escrow Hold on order payment
+        val currWallet = _wallet.value
+        val holdTx = WalletTransaction(
+            id = "tx_hold_${System.currentTimeMillis()}",
+            type = WalletTransactionType.ESCROW_HOLD,
+            amount = product.price,
+            title = "Ký quỹ tạm giữ đơn #${newOrder.internalCode}",
+            description = "Tiền được bảo vệ trong Ví Escrow SwapShe trong 48h",
+            timestamp = timeNow,
+            isPositive = false,
+            orderCode = newOrder.internalCode
+        )
+        _wallet.value = currWallet.copy(
+            escrowHoldBalance = currWallet.escrowHoldBalance + product.price,
+            transactions = listOf(holdTx) + currWallet.transactions
+        )
+
         _pendingCheckoutProduct.value = null
         return newOrder
     }
 
     fun confirmDelivery(orderId: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
-        _orders.value = _orders.value.map { order ->
+        var releasedAmount = 0L
+        var orderCode = ""
+
+        val timelineUpdater: (Order) -> Order = { order ->
             if (order.id == orderId) {
+                orderCode = order.internalCode
+                val commission = (order.subtotal * 0.05).toLong()
+                releasedAmount = order.subtotal - commission
+
                 val updatedTimeline = order.timeline + TimelineEvent(
-                    "Order completed",
-                    "Người mua đã xác nhận nhận hàng",
+                    "Order completed & Escrow Released",
+                    "Người mua xác nhận hàng • Tiền đã chuyển vào Ví SwapShe của người bán (Đã trừ 5% phí sàn)",
                     timeNow,
                     true
                 )
@@ -257,11 +449,40 @@ class SwapSheRepository private constructor() {
                 )
             } else order
         }
-        showToast("Đã xác nhận nhận hàng thành công!")
+
+        // Update both buyer and seller order records
+        _orders.value = _orders.value.map(timelineUpdater)
+        _sellerOrders.value = _sellerOrders.value.map(timelineUpdater)
+
+        if (releasedAmount > 0) {
+            val currWallet = _wallet.value
+            val releaseTx = WalletTransaction(
+                id = "tx_rel_${System.currentTimeMillis()}",
+                type = WalletTransactionType.RELEASE_EARNING,
+                amount = releasedAmount,
+                title = "Doanh thu đơn $orderCode (Đã trừ 5% phí sàn)",
+                description = "Ví Ký Quỹ giải ngân sau khi người mua xác nhận thành công",
+                timestamp = timeNow,
+                isPositive = true,
+                orderCode = orderCode
+            )
+            _wallet.value = currWallet.copy(
+                availableBalance = currWallet.availableBalance + releasedAmount,
+                escrowHoldBalance = (currWallet.escrowHoldBalance - (releasedAmount * 100 / 95)).coerceAtLeast(0L),
+                transactions = listOf(releaseTx) + currWallet.transactions
+            )
+        }
+
+        showToast("Đã xác nhận nhận hàng! Tiền ký quỹ đã được giải ngân cho người bán.")
     }
 
     fun reviewOrder(orderId: String, rating: Int, comment: String) {
         _orders.value = _orders.value.map { order ->
+            if (order.id == orderId) {
+                order.copy(review = OrderReview(rating, comment))
+            } else order
+        }
+        _sellerOrders.value = _sellerOrders.value.map { order ->
             if (order.id == orderId) {
                 order.copy(review = OrderReview(rating, comment))
             } else order
@@ -287,6 +508,9 @@ class SwapSheRepository private constructor() {
             _myCloset.value = listOf(updatedProduct) + _myCloset.value
         }
 
+        // Persist to SQLite Database (Create / Update)
+        dbHelper?.insertProduct(updatedProduct)
+
         if (isPublish) {
             // Also make available in public products
             _products.value = listOf(updatedProduct) + _products.value.filter { it.id != updatedProduct.id }
@@ -307,7 +531,8 @@ class SwapSheRepository private constructor() {
                     message = "Món '${updatedProduct.title}' (Size ${updatedProduct.size}) vừa khớp với bộ lọc bạn đã lưu.",
                     timestamp = "Vừa xong",
                     isRead = false,
-                    type = "saved_search_match"
+                    type = "saved_search_match",
+                    targetProductId = updatedProduct.id
                 )
                 _notifications.value = listOf(newNotif) + _notifications.value
             }
@@ -317,27 +542,33 @@ class SwapSheRepository private constructor() {
     }
 
     fun deleteDraft(productId: String) {
+        // Delete from SQLite Database (Delete CRUD)
+        dbHelper?.deleteProduct(productId)
         _myCloset.value = _myCloset.value.filter { it.id != productId }
         showToast("Đã xóa món đồ khỏi tủ đồ.")
     }
 
     fun updateSellerOrderStatus(orderId: String, nextStatus: OrderStatus) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
-        _sellerOrders.value = _sellerOrders.value.map { order ->
+        val statusMapper: (Order) -> Order = { order ->
             if (order.id == orderId) {
                 val desc = when (nextStatus) {
-                    OrderStatus.PREPARING -> "Bạn đã xác nhận chuẩn bị gói hàng"
-                    OrderStatus.SHIPPED -> "Bạn đã bàn giao gói hàng cho bưu tá GHN"
-                    OrderStatus.DELIVERED -> "Bưu tá đã giao hàng thành công đến người mua"
+                    OrderStatus.PREPARING -> "Người bán đã xác nhận chuẩn bị gói hàng"
+                    OrderStatus.SHIPPED -> "Người bán đã bàn giao gói hàng cho bưu tá GHN"
+                    OrderStatus.DELIVERED -> "Bưu tá đã giao hàng thành công đến người mua (Bắt đầu 48h bảo hiểm)"
                     OrderStatus.COMPLETED -> "Đơn hàng đã hoàn tất giao dịch"
-                    OrderStatus.CANCELLED -> "Người bán hủy đơn"
+                    OrderStatus.CANCELLED -> "Đơn hàng đã bị hủy"
                     else -> "Cập nhật trạng thái"
                 }
                 val newEvent = TimelineEvent(nextStatus.label, desc, timeNow, true)
                 order.copy(status = nextStatus, timeline = order.timeline + newEvent)
             } else order
         }
-        showToast("Đã cập nhật trạng thái đơn bán thành công.")
+
+        // Synchronize both sellerOrders and buyer orders
+        _sellerOrders.value = _sellerOrders.value.map(statusMapper)
+        _orders.value = _orders.value.map(statusMapper)
+        showToast("Đã cập nhật trạng thái đơn hàng: ${nextStatus.label}")
     }
 
     // --- DIRECT SWAP OPERATIONS (F26 - F29) ---
@@ -358,27 +589,25 @@ class SwapSheRepository private constructor() {
         )
 
         _swapOffers.value = listOf(newOffer) + _swapOffers.value
-        showToast("Đã gửi đề nghị trao đổi 1-1! Chờ người bán phản hồi nhé 🔄")
+        showToast("Đã gửi đề nghị trao đổi 1-1! Chờ người bán phản hồi nhé ✨")
     }
 
-    fun acceptSwapOffer(offerId: String): Boolean {
-        val offer = _swapOffers.value.find { it.id == offerId } ?: return false
+    fun acceptSwapOffer(offerId: String): String? {
+        val offer = _swapOffers.value.find { it.id == offerId } ?: return null
 
-        // Check availability of both items (Atomic Conflict Check)
-        val isRequestedAvailable = _myCloset.value.find { it.id == offer.requestedProduct.id }?.status == ProductStatus.AVAILABLE ||
-                _products.value.find { it.id == offer.requestedProduct.id }?.status == ProductStatus.AVAILABLE
-        val isOfferedAvailable = _products.value.find { it.id == offer.offeredProduct.id }?.status == ProductStatus.AVAILABLE ||
-                _myCloset.value.find { it.id == offer.offeredProduct.id }?.status == ProductStatus.AVAILABLE
+        // Check availability: only block if explicitly SOLD
+        val isRequestedSold = _products.value.find { it.id == offer.requestedProduct.id }?.status == ProductStatus.SOLD
+        val isOfferedSold = _products.value.find { it.id == offer.offeredProduct.id }?.status == ProductStatus.SOLD
 
-        if (!isRequestedAvailable || !isOfferedAvailable) {
+        if (isRequestedSold || isOfferedSold) {
             _swapOffers.value = _swapOffers.value.map {
                 if (it.id == offerId) it.copy(status = SwapOfferStatus.CONFLICT) else it
             }
-            showToast("Rất tiếc! Một trong hai món đồ đã không còn khả dụng để trao đổi.")
-            return false
+            showToast("Rất tiếc! Một trong hai món đồ đã được bán trước đó.")
+            return null
         }
 
-        // Lock both products atomically as RESERVED / SWAPPED
+        // Lock both products atomically as RESERVED for Swap
         _myCloset.value = _myCloset.value.map {
             if (it.id == offer.requestedProduct.id || it.id == offer.offeredProduct.id) {
                 it.copy(status = ProductStatus.RESERVED)
@@ -398,26 +627,29 @@ class SwapSheRepository private constructor() {
             offerId = offer.id,
             userAId = offer.senderId,
             userAName = offer.senderName,
-            userBId = _currentUser.value.id,
-            userBName = _currentUser.value.name,
+            userBId = offer.recipientId,
+            userBName = offer.recipientName,
             productA = offer.offeredProduct,
             productB = offer.requestedProduct,
             shipmentAtoB = TwoWayShipment(
                 id = "ship_${System.currentTimeMillis()}_A2B",
                 fromUserId = offer.senderId,
-                toUserId = _currentUser.value.id,
-                trackingCodeDemo = "DEMO-SHIP-A2B-${(1000..9999).random()}"
+                toUserId = offer.recipientId,
+                trackingCodeDemo = "GHN-SWAP-A2B-${(1000..9999).random()}"
             ),
             shipmentBtoA = TwoWayShipment(
                 id = "ship_${System.currentTimeMillis()}_B2A",
-                fromUserId = _currentUser.value.id,
+                fromUserId = offer.recipientId,
                 toUserId = offer.senderId,
-                trackingCodeDemo = "DEMO-SHIP-B2A-${(1000..9999).random()}"
+                trackingCodeDemo = "GHN-SWAP-B2A-${(1000..9999).random()}"
             ),
             status = SwapTransactionStatus.AWAITING_DISPATCH,
             createdAt = timeNow,
+            isEscrowDepositedA = false,
+            isEscrowDepositedB = false,
+            escrowDepositAmount = 50_000L,
             timeline = listOf(
-                TimelineEvent("Đề nghị trao đổi được chấp thuận", "Cả 2 bên bắt đầu chuẩn bị gửi hàng", timeNow, true)
+                TimelineEvent("Đề nghị trao đổi được chấp thuận", "Cả 2 bên chuẩn bị đặt cọc bảo đảm Escrow 50.000đ và gửi hàng", timeNow, true)
             )
         )
 
@@ -426,7 +658,29 @@ class SwapSheRepository private constructor() {
             if (it.id == offerId) it.copy(status = SwapOfferStatus.ACCEPTED, swapTransactionId = txId) else it
         }
         showToast("Đã chấp nhận đề nghị đổi đồ! Giao dịch 2 chiều đã bắt đầu.")
-        return true
+        return txId
+    }
+
+    fun depositSwapEscrow(transactionId: String, isUserA: Boolean) {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        _swapTransactions.value = _swapTransactions.value.map { tx ->
+            if (tx.id == transactionId) {
+                val updatedA = if (isUserA) true else tx.isEscrowDepositedA
+                val updatedB = if (!isUserA) true else tx.isEscrowDepositedB
+                val bothDone = updatedA && updatedB
+                tx.copy(
+                    isEscrowDepositedA = updatedA,
+                    isEscrowDepositedB = updatedB,
+                    timeline = tx.timeline + TimelineEvent(
+                        if (isUserA) "${tx.userAName} đã cọc bảo đảm Escrow 50.000đ" else "Bạn đã cọc bảo đảm Escrow 50.000đ",
+                        if (bothDone) "Hai bên đã cọc Escrow 100%! Tiến hành bàn giao bưu tá." else "Chờ bên còn lại hoàn tất ký quỹ.",
+                        timeNow,
+                        true
+                    )
+                )
+            } else tx
+        }
+        showToast("✓ Đã ký quỹ cọc Escrow 50.000đ thành công!")
     }
 
     fun rejectSwapOffer(offerId: String) {
@@ -539,9 +793,283 @@ class SwapSheRepository private constructor() {
         return newDispute
     }
 
-    // Helper for testing order status transitions
+    // Extended Dispute with Media proof and Escrow Freeze
+    fun submitDisputeWithMedia(
+        targetType: DisputeTargetType,
+        targetId: String,
+        targetTitle: String,
+        reason: String,
+        description: String,
+        evidencePhotos: List<String> = emptyList(),
+        evidenceVideoUrl: String? = null,
+        requestedAmount: Long? = null
+    ): DisputeReport {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        val newDispute = DisputeReport(
+            id = "case_${System.currentTimeMillis()}",
+            reporterId = _currentUser.value.id,
+            reporterName = _currentUser.value.name,
+            targetType = targetType,
+            targetId = targetId,
+            targetTitle = targetTitle,
+            reason = reason,
+            description = description,
+            status = DisputeStatus.UNDER_REVIEW,
+            createdAt = timeNow,
+            evidencePhotos = evidencePhotos,
+            evidenceVideoUrl = evidenceVideoUrl,
+            requestedRefundAmount = requestedAmount,
+            isEscrowFrozen = true
+        )
+
+        _disputes.value = listOf(newDispute) + _disputes.value
+
+        // Freeze Order and Escrow
+        if (targetType == DisputeTargetType.ORDER) {
+            _orders.value = _orders.value.map {
+                if (it.id == targetId) it.copy(status = OrderStatus.DISPUTED) else it
+            }
+            _sellerOrders.value = _sellerOrders.value.map {
+                if (it.id == targetId) it.copy(status = OrderStatus.DISPUTED) else it
+            }
+        } else if (targetType == DisputeTargetType.SWAP) {
+            _swapTransactions.value = _swapTransactions.value.map {
+                if (it.id == targetId) it.copy(status = SwapTransactionStatus.DISPUTED) else it
+            }
+        }
+
+        showToast("🛡️ Đã gửi khiếu nại & ĐÓNG BĂNG tiền Ký Quỹ Escrow! Người bán có 24h để thương lượng.")
+        return newDispute
+    }
+
+    fun sellerRespondDispute(disputeId: String, offerType: DisputeOfferType, partialAmount: Long?, message: String) {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                d.copy(
+                    sellerOffer = DisputeOffer(
+                        type = offerType,
+                        amount = partialAmount,
+                        note = message,
+                        timestamp = timeNow
+                    )
+                )
+            } else d
+        }
+        showToast("Người bán đã gửi phản hồi thương lượng cho khiếu nại.")
+    }
+
+    fun buyerAcceptDisputeOffer(disputeId: String) {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                val refund = d.sellerOffer?.amount ?: d.requestedRefundAmount ?: 100000L
+                val currWallet = _wallet.value
+                val refundTx = WalletTransaction(
+                    id = "tx_rf_${System.currentTimeMillis()}",
+                    type = WalletTransactionType.DISPUTE_REFUND,
+                    amount = refund,
+                    title = "Hoàn tiền khiếu nại thành công",
+                    description = "Hai bên đã đồng thuận phương án: ${d.sellerOffer?.type?.label}",
+                    timestamp = timeNow,
+                    isPositive = true
+                )
+                _wallet.value = currWallet.copy(
+                    availableBalance = currWallet.availableBalance + refund,
+                    escrowHoldBalance = (currWallet.escrowHoldBalance - refund).coerceAtLeast(0L),
+                    transactions = listOf(refundTx) + currWallet.transactions
+                )
+                d.copy(
+                    status = DisputeStatus.RESOLVED,
+                    resolutionNote = "Hai bên đã đồng thuận giải quyết khiếu nại."
+                )
+            } else d
+        }
+        showToast("Đã chấp thuận giải pháp! Tiền đã được hoàn về Ví SwapShe của bạn.")
+    }
+
+    fun escalateDisputeToAdmin(disputeId: String) {
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                d.copy(
+                    status = DisputeStatus.UNDER_REVIEW,
+                    resolutionNote = "Đã chuyển hồ sơ cho SwapShe Admin phân xử dựa trên video đóng gói & unbox."
+                )
+            } else d
+        }
+        showToast("Đã gửi yêu cầu Admin SwapShe đứng ra phân xử!")
+    }
+
+    fun adminResolveDispute(disputeId: String, returnApproved: Boolean) {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                if (returnApproved) {
+                    val returnCode = "GHN-RETURN-${(100000..999999).random()}"
+                    d.copy(
+                        status = DisputeStatus.RESOLVED,
+                        adminVerdict = "SwapShe Admin phán quyết: Chấp nhận trả hàng. Mã vận đơn hoàn: $returnCode.",
+                        returnTrackingCode = returnCode,
+                        resolutionNote = "Admin phê duyệt hoàn tiền sau khi người bán nhận lại hàng."
+                    )
+                } else {
+                    d.copy(
+                        status = DisputeStatus.REJECTED,
+                        adminVerdict = "SwapShe Admin phán quyết: Bằng chứng sản phẩm đúng mô tả ban đầu của người bán. Đơn hàng tiếp tục giải ngân.",
+                        resolutionNote = "Admin bác bỏ khiếu nại."
+                    )
+                }
+            } else d
+        }
+        showToast("Admin đã đưa ra phán quyết giải quyết tranh chấp.")
+    }
+
+    fun sellerRejectDispute(disputeId: String, reason: String = "Sản phẩm gửi đi hoàn toàn nguyên vẹn đúng mô tả") {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                d.copy(
+                    sellerOffer = DisputeOffer(
+                        type = DisputeOfferType.REJECT,
+                        amount = 0L,
+                        note = reason,
+                        timestamp = timeNow
+                    ),
+                    resolutionNote = "Người bán từ chối khiếu nại. Chuyển hồ sơ cho SwapShe Admin xử lý."
+                )
+            } else d
+        }
+        showToast("Người bán đã từ chối khiếu nại. Đã chuyển hồ sơ cho SwapShe Admin.")
+    }
+
+    fun sellerConfirmReturnReceived(disputeId: String) {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                val refund = d.requestedRefundAmount ?: 420000L
+                val currWallet = _wallet.value
+                val refundTx = WalletTransaction(
+                    id = "tx_ret_${System.currentTimeMillis()}",
+                    type = WalletTransactionType.DISPUTE_REFUND,
+                    amount = refund,
+                    title = "Hoàn tiền 100% sau khi trả hàng",
+                    description = "Người bán đã nhận lại kiện hàng trả • Ví Escrow hoàn tiền cho Buyer",
+                    timestamp = timeNow,
+                    isPositive = true
+                )
+                _wallet.value = currWallet.copy(
+                    availableBalance = currWallet.availableBalance + refund,
+                    escrowHoldBalance = (currWallet.escrowHoldBalance - refund).coerceAtLeast(0L),
+                    transactions = listOf(refundTx) + currWallet.transactions
+                )
+                d.copy(
+                    status = DisputeStatus.RESOLVED,
+                    isSellerReturnConfirmed = true,
+                    resolutionNote = "Người bán xác nhận đã nhận lại hàng. Hoàn tất hoàn tiền 100% qua Escrow."
+                )
+            } else d
+        }
+        showToast("✓ Người bán đã xác nhận nhận lại hàng! Tiền ký quỹ đã hoàn về ví Buyer.")
+    }
+
+    // Flow G: Payout Withdrawal
+    fun withdrawFunds(amount: Long, bank: BankPayoutAccount): Boolean {
+        val curr = _wallet.value
+        if (amount <= 0 || amount > curr.availableBalance) {
+            showToast("Số dư khả dụng không đủ để rút số tiền này.")
+            return false
+        }
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        val newTx = WalletTransaction(
+            id = "tx_w_${System.currentTimeMillis()}",
+            type = WalletTransactionType.WITHDRAW_BANK,
+            amount = amount,
+            title = "Rút tiền về ${bank.bankName} (*${bank.accountNumber.takeLast(4)})",
+            description = "Lệnh rút tiền đang được ngân hàng đối soát chuyển khoản",
+            timestamp = timeNow,
+            isPositive = false
+        )
+        _wallet.value = curr.copy(
+            availableBalance = curr.availableBalance - amount,
+            bankAccount = bank,
+            transactions = listOf(newTx) + curr.transactions
+        )
+        showToast("Đã tạo lệnh rút tiền về tài khoản ngân hàng thành công!")
+        return true
+    }
+
+    // Flow H: eKYC & Trust Score
+    fun submitEkyc(doc: EkycDocument) {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        val updatedProfile = _sheTrustProfile.value.copy(
+            status = EkycStatus.VERIFIED,
+            score = (_sheTrustProfile.value.score + 10).coerceAtMost(100),
+            badge = TrustBadgeType.QUEEN_CLOSET,
+            document = doc.copy(verifiedDate = timeNow)
+        )
+        _sheTrustProfile.value = updatedProfile
+        _currentUser.value = _currentUser.value.copy(
+            trustProfile = updatedProfile
+        )
+        showToast("🎉 Định danh eKYC thành công! Đạt huy hiệu Queen Closet 👑 & Điểm tín nhiệm 98/100")
+    }
+
+    // Flow E: Fit Score calculation
+    fun calculateFitScore(user: User, product: Product): Int {
+        var score = 86
+        if (user.sizePreference != null && user.sizePreference.equals(product.size, ignoreCase = true)) {
+            score += 5
+        }
+        if (user.stylePreferences.any { it.equals(product.style, ignoreCase = true) }) {
+            score += 4
+        }
+        val userBust = user.bodyMeasurements?.bustCm
+        val prodBust = product.measurements.bust
+        if (userBust != null && prodBust != null) {
+            val diff = Math.abs(userBust - prodBust)
+            if (diff <= 3) score += 4
+        }
+        return score.coerceIn(75, 99)
+    }
+
+    // Flow H: Anti-scam keywords detection & Chat send
+    fun checkMessageForOutPlatformScam(text: String): String? {
+        val lower = text.lowercase()
+        val riskKeywords = listOf("chuyển khoản riêng", "stk", "zalo", "ngân hàng riêng", "chuyển riêng", "ck riêng", "số tài khoản", "09", "03", "07", "08")
+        for (k in riskKeywords) {
+            if (lower.contains(k)) {
+                return "⚠️ CẢNH BÁO AN TOÀN SWAPSHE: Phát hiện dấu hiệu chia sẻ liên lạc/chuyển khoản ngoài sàn! Mọi giao dịch ngoài Ví Escrow sẽ KHÔNG ĐƯỢC BẢO VỆ và có nguy cơ bị khóa tài khoản."
+            }
+        }
+        return null
+    }
+
+    fun sendChatMessage(text: String, recipientName: String = "Người bán"): ChatMessage {
+        val timeNow = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+        val scamWarning = checkMessageForOutPlatformScam(text)
+        val newMsg = ChatMessage(
+            id = "msg_${System.currentTimeMillis()}",
+            senderId = _currentUser.value.id,
+            senderName = _currentUser.value.name,
+            text = text,
+            timestamp = timeNow,
+            isFromMe = true,
+            isWarning = scamWarning != null,
+            warningText = scamWarning
+        )
+        _chatMessages.value = _chatMessages.value + newMsg
+        if (scamWarning != null) {
+            showToast("⚠️ Phát hiện từ khóa nhạy cảm ngoài sàn!")
+        }
+        return newMsg
+    }
+
+    // Helper for testing order status transitions (Syncs both Buyer and Seller)
     fun advanceOrderStatus(orderId: String) {
-        _orders.value = _orders.value.map { order ->
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        var nextStatusToToast: OrderStatus? = null
+
+        val mapper: (Order) -> Order = { order ->
             if (order.id == orderId) {
                 val nextStatus = when (order.status) {
                     OrderStatus.PLACED -> OrderStatus.PAID
@@ -551,10 +1079,57 @@ class SwapSheRepository private constructor() {
                     OrderStatus.DELIVERED -> OrderStatus.COMPLETED
                     else -> order.status
                 }
-                val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
-                val newEvent = TimelineEvent(nextStatus.label, "Cập nhật tiến trình đơn", timeNow, true)
+                nextStatusToToast = nextStatus
+                val newEvent = TimelineEvent(nextStatus.label, "Mô phỏng chuyển bước giao vận: ${nextStatus.label}", timeNow, true)
                 order.copy(status = nextStatus, timeline = order.timeline + newEvent)
             } else order
+        }
+
+        _orders.value = _orders.value.map(mapper)
+        _sellerOrders.value = _sellerOrders.value.map(mapper)
+        nextStatusToToast?.let {
+            showToast("⚡ [Dev Simulator] Đơn chuyển sang: ${it.label}")
+        }
+    }
+
+    // Flow D: Admin Dispute Arbitration Decision
+    fun resolveDisputeByAdmin(disputeId: String, refundToBuyer: Boolean, note: String = "") {
+        val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        val dispute = _disputes.value.find { it.id == disputeId } ?: return
+
+        _disputes.value = _disputes.value.map { d ->
+            if (d.id == disputeId) {
+                d.copy(
+                    status = DisputeStatus.RESOLVED,
+                    resolutionNote = if (refundToBuyer)
+                        "Trọng tài SwapShe phán quyết: Chấp thuận khiếu nại. Hoàn tiền 100% (${d.requestedAmount}đ) cho Người mua. $note"
+                    else
+                        "Trọng tài SwapShe phán quyết: Bác khiếu nại. Giải ngân doanh thu cho Người bán. $note"
+                )
+            } else d
+        }
+
+        if (refundToBuyer) {
+            // Escrow hoàn 100% tiền tạm giữ cho Buyer
+            _wallet.value = _wallet.value.copy(
+                availableBalance = _wallet.value.availableBalance + dispute.requestedAmount,
+                escrowHoldBalance = maxOf(0L, _wallet.value.escrowHoldBalance - dispute.requestedAmount),
+                transactions = listOf(
+                    WalletTransaction(
+                        id = "tx_admin_refund_${System.currentTimeMillis()}",
+                        type = WalletTransactionType.DISPUTE_REFUND,
+                        amount = dispute.requestedAmount,
+                        title = "Trọng tài hoàn tiền khiếu nại 100%",
+                        description = "Phán quyết trọng tài cho ${dispute.targetTitle}",
+                        timestamp = timeNow,
+                        isPositive = true,
+                        orderCode = dispute.targetId
+                    )
+                ) + _wallet.value.transactions
+            )
+            showToast("⚖️ Trọng tài đã phán quyết: Hoàn 100% tiền Escrow cho Người mua!")
+        } else {
+            showToast("⚖️ Trọng tài đã phán quyết: Bác khiếu nại & Giải ngân cho Người bán!")
         }
     }
 
