@@ -92,8 +92,8 @@ fun SwapRequestsScreen(
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(
-                text = "Hộp thư đổi đồ (Swap Requests)",
-                fontFamily = FontFamily.Serif,
+                text = "Hộp thư đổi đồ",
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary

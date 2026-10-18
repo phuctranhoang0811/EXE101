@@ -84,7 +84,7 @@ fun SplashScreen(
 
             Text(
                 text = "SWAPSHE",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Primary,
@@ -93,7 +93,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Loved Before, Styled Again.",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Normal,
                 color = TextSecondary

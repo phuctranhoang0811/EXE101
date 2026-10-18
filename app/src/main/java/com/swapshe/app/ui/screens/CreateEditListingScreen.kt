@@ -61,6 +61,7 @@ import com.swapshe.app.model.ConditionType
 import com.swapshe.app.model.Product
 import com.swapshe.app.model.ProductMeasurements
 import com.swapshe.app.model.ProductStatus
+import com.swapshe.app.theme.ActiveIconRed
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.Primary
@@ -196,7 +197,7 @@ fun CreateEditListingScreen(
             }
             Text(
                 text = if (productId != null) "Chỉnh sửa món đồ" else "Đăng bán / Đổi đồ",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -272,7 +273,7 @@ fun CreateEditListingScreen(
             when (currentStep) {
                 1 -> {
                     // STEP 1: Photos & 4 Mandatory Angles (Flow I)
-                    Text(text = "Chụp 4 góc quy chuẩn & Video (Flow I)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(text = "Chụp 4 góc quy chuẩn & Video", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Text(text = "Chụp đủ 4 góc bắt buộc giúp tin đăng được duyệt nhanh và tăng 90% khả năng chốt đơn.", fontSize = 12.sp, color = TextSecondary)
                     Spacer(modifier = Modifier.height(14.dp))
 
@@ -554,7 +555,12 @@ fun CreateEditListingScreen(
                                 Switch(
                                     checked = allowSwap,
                                     onCheckedChange = { allowSwap = it },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = Primary, checkedTrackColor = PrimarySoft15)
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = ActiveIconRed,
+                                        checkedTrackColor = ActiveIconRed.copy(alpha = 0.35f),
+                                        uncheckedThumbColor = Color(0xFF8E8E93),
+                                        uncheckedTrackColor = Color(0xFFE5E5EA)
+                                    )
                                 )
                             }
                         }
@@ -585,11 +591,12 @@ fun CreateEditListingScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding()
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {

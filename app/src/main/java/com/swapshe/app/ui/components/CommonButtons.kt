@@ -6,9 +6,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -24,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swapshe.app.theme.BorderColor
@@ -52,6 +55,7 @@ fun PrimaryButton(
         enabled = enabled && !isLoading,
         interactionSource = interactionSource,
         shape = RoundedCornerShape(12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Primary,
             contentColor = Color.White,
@@ -60,7 +64,7 @@ fun PrimaryButton(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .heightIn(min = 52.dp)
             .scale(scale)
     ) {
         if (isLoading) {
@@ -75,6 +79,10 @@ fun PrimaryButton(
             Text(
                 text = text,
                 fontSize = 15.sp,
+                lineHeight = 20.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -101,6 +109,7 @@ fun SecondaryButton(
         enabled = enabled,
         interactionSource = interactionSource,
         shape = RoundedCornerShape(12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         border = BorderStroke(1.5.dp, if (enabled) Primary else BorderColor),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = Primary,
@@ -108,12 +117,16 @@ fun SecondaryButton(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .heightIn(min = 52.dp)
             .scale(scale)
     ) {
         Text(
             text = text,
             fontSize = 15.sp,
+            lineHeight = 20.sp,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             fontWeight = FontWeight.SemiBold
         )
     }

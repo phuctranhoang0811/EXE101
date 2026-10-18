@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,14 +65,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swapshe.app.ui.viewmodels.CheckoutViewModel
+import com.swapshe.app.ui.viewmodels.OrdersViewModel
 import com.swapshe.app.data.MockData
-import com.swapshe.app.data.SwapSheRepository
 import com.swapshe.app.model.Order
 import com.swapshe.app.model.ShippingAddress
 import com.swapshe.app.ui.components.PrimaryButton
 import com.swapshe.app.ui.components.SecondaryButton
 import com.swapshe.app.ui.components.SwapsheTextField
 import com.swapshe.app.ui.components.TextLinkButton
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.ErrorBg
 import com.swapshe.app.theme.ErrorRed
@@ -94,11 +98,11 @@ import java.text.DecimalFormat
 @Composable
 fun ShippingAddressScreen(
     onNavigateBack: () -> Unit,
-    onContinueToReview: () -> Unit
+    onContinueToReview: () -> Unit,
+    viewModel: CheckoutViewModel = viewModel(factory = CheckoutViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val product = repository.pendingCheckoutProduct.collectAsState().value ?: MockData.products.first()
-    val savedAddress by repository.currentAddress.collectAsState()
+    val product by viewModel.product.collectAsState()
+    val savedAddress by viewModel.currentAddress.collectAsState()
 
     var fullName by remember { mutableStateOf(savedAddress.fullName) }
     var phone by remember { mutableStateOf(savedAddress.phone) }
@@ -123,6 +127,7 @@ fun ShippingAddressScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
+                .responsiveContainerWidth(720.dp)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -130,8 +135,8 @@ fun ShippingAddressScreen(
                 Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(
-                text = "Checkout (1/2: Địa chỉ giao hàng)",
-                fontFamily = FontFamily.Serif,
+                text = "Thanh toán (1/2: Địa chỉ giao hàng)",
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
@@ -150,6 +155,7 @@ fun ShippingAddressScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .responsiveContainerWidth(720.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
@@ -281,16 +287,19 @@ fun ShippingAddressScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .responsiveContainerWidth(720.dp)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
                 PrimaryButton(
                     text = "Tiếp tục sang thanh toán (Review & Pay) →",
                     onClick = {
-                        if (validate()) {
-                            repository.updateShippingAddress(
-                                ShippingAddress(fullName, phone, province, ward, detailAddress)
-                            )
+                        if (viewModel.updateAddress(fullName, phone, province, ward, detailAddress)) {
                             onContinueToReview()
                         } else {
                             hasError = true
@@ -309,11 +318,11 @@ fun ShippingAddressScreen(
 fun ReviewPaymentScreen(
     onNavigateBack: () -> Unit,
     onEditAddress: () -> Unit,
-    onProceedToMockPayment: () -> Unit
+    onProceedToMockPayment: () -> Unit,
+    viewModel: CheckoutViewModel = viewModel(factory = CheckoutViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val product = repository.pendingCheckoutProduct.collectAsState().value ?: MockData.products.first()
-    val address by repository.currentAddress.collectAsState()
+    val product by viewModel.product.collectAsState()
+    val address by viewModel.currentAddress.collectAsState()
 
     val formatter = DecimalFormat("#,###")
     val shippingFee = 25000L
@@ -329,6 +338,7 @@ fun ReviewPaymentScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
+                .responsiveContainerWidth(720.dp)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -336,8 +346,8 @@ fun ReviewPaymentScreen(
                 Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(
-                text = "Checkout (2/2: Xác nhận đơn hàng)",
-                fontFamily = FontFamily.Serif,
+                text = "Thanh toán (2/2: Xác nhận đơn hàng)",
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
@@ -356,6 +366,7 @@ fun ReviewPaymentScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .responsiveContainerWidth(720.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
@@ -462,7 +473,7 @@ fun ReviewPaymentScreen(
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "Tổng thanh toán", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                        Text(text = "${formatter.format(totalAmount)}đ", fontFamily = FontFamily.Serif, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
+                        Text(text = "${formatter.format(totalAmount)}đ", fontFamily = FontFamily.SansSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
                     }
                 }
             }
@@ -474,9 +485,15 @@ fun ReviewPaymentScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .responsiveContainerWidth(720.dp)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
                 PrimaryButton(
                     text = "Xác nhận & Đi đến Thanh toán mô phỏng (${formatter.format(totalAmount)}đ)",
                     onClick = onProceedToMockPayment
@@ -492,26 +509,32 @@ fun ReviewPaymentScreen(
 @Composable
 fun MockPaymentScreen(
     onPaymentSuccess: (orderId: String) -> Unit,
-    onNavigateBackToReview: () -> Unit
+    onNavigateBackToReview: () -> Unit,
+    viewModel: CheckoutViewModel = viewModel(factory = CheckoutViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val product = repository.pendingCheckoutProduct.collectAsState().value ?: MockData.products.first()
-    val address by repository.currentAddress.collectAsState()
-
-    var isProcessing by remember { mutableStateOf(false) }
-    var failureError by remember { mutableStateOf<String?>(null) }
+    val product by viewModel.product.collectAsState()
+    val address by viewModel.currentAddress.collectAsState()
+    val isProcessing by viewModel.isProcessing.collectAsState()
+    val failureError by viewModel.failureError.collectAsState()
 
     val formatter = DecimalFormat("#,###")
     val totalAmount = product.price + 25000L
     val attemptCode = remember { "PAY-ATTEMPT-${(100000..999999).random()}" }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmCream)
-            .statusBarsPadding()
-            .padding(20.dp)
+            .background(WarmCream),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .responsiveContainerWidth(580.dp)
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+        ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -521,7 +544,7 @@ fun MockPaymentScreen(
             }
             Text(
                 text = "Mock Payment Simulation",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
@@ -576,7 +599,7 @@ fun MockPaymentScreen(
                 Text(text = "Số tiền thanh toán", fontSize = 12.sp, color = TextMuted)
                 Text(
                     text = "${formatter.format(totalAmount)}đ",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary
@@ -632,10 +655,9 @@ fun MockPaymentScreen(
             PrimaryButton(
                 text = "✓ Simulate Success (Thanh toán thành công)",
                 onClick = {
-                    isProcessing = true
-                    failureError = null
-                    val createdOrder = repository.createOrder(product, address)
-                    onPaymentSuccess(createdOrder.id)
+                    viewModel.simulatePaymentSuccess { createdOrderId ->
+                        onPaymentSuccess(createdOrderId)
+                    }
                 }
             )
 
@@ -645,13 +667,16 @@ fun MockPaymentScreen(
             SecondaryButton(
                 text = "✕ Simulate Failure (Thanh toán thất bại)",
                 onClick = {
-                    failureError = "Tài khoản mô phỏng không đủ hạn mức hoặc phiên thanh toán hết hạn. Bạn có thể nhấn Thử lại (Retry) hoặc quay về kiểm tra giỏ hàng."
+                    viewModel.simulatePaymentFailure(
+                        "Tài khoản mô phỏng không đủ hạn mức hoặc phiên thanh toán hết hạn. Bạn có thể nhấn Thử lại (Retry) hoặc quay về kiểm tra giỏ hàng."
+                    )
                 }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
 }
 
 /* --------------------------------------------------------------------------
@@ -661,10 +686,10 @@ fun MockPaymentScreen(
 fun OrderConfirmationScreen(
     orderId: String,
     onViewOrder: (String) -> Unit,
-    onContinueShopping: () -> Unit
+    onContinueShopping: () -> Unit,
+    ordersViewModel: OrdersViewModel = viewModel(factory = OrdersViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val orders by repository.orders.collectAsState()
+    val orders by ordersViewModel.orders.collectAsState()
     val order = orders.find { it.id == orderId } ?: orders.firstOrNull() ?: MockData.initialOrders.first()
 
     val formatter = DecimalFormat("#,###")
@@ -703,14 +728,21 @@ fun OrderConfirmationScreen(
         label = "pulseAlpha"
     )
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmCream)
-            .statusBarsPadding()
-            .padding(24.dp)
+            .background(WarmCream),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxHeight()
+                .responsiveContainerWidth(580.dp)
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp)
+        ) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Box(
@@ -751,7 +783,7 @@ fun OrderConfirmationScreen(
             ) {
                 Text(
                     text = "Đặt hàng thành công!",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
@@ -816,7 +848,7 @@ fun OrderConfirmationScreen(
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(28.dp))
 
         PrimaryButton(
             text = "Xem tiến trình đơn (View Order) →",
@@ -832,4 +864,5 @@ fun OrderConfirmationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
 }

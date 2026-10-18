@@ -109,10 +109,10 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Hồ sơ của tôi (My Profile)",
-                fontFamily = FontFamily.Serif,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
+                text = "Hồ sơ cá nhân",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
             Image(
@@ -160,7 +160,7 @@ fun ProfileScreen(
                 Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
                     Text(
                         text = if (user.isGuest) "Guest Explorer" else user.name,
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = FontFamily.SansSerif,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -410,49 +410,49 @@ fun ProfileScreen(
             Column {
                 ProfileMenuItem(
                     icon = Icons.Filled.AccountBalanceWallet,
-                    title = "Ví SwapShe & Ký quỹ Escrow (Flow G)",
+                    title = "Ví SwapShe & Ký quỹ Escrow",
                     onClick = onNavigateToWallet
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Filled.VerifiedUser,
-                    title = "Định danh eKYC & Điểm She-Trust (Flow H)",
+                    title = "Định danh eKYC & Điểm She-Trust",
                     onClick = onNavigateToEkyc
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Filled.ShoppingBag,
-                    title = "Đơn mua của tôi (My Orders)",
+                    title = "Đơn mua của tôi",
                     onClick = onNavigateToOrders
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Filled.Favorite,
-                    title = "Món đồ yêu thích (Wishlist)",
+                    title = "Món đồ yêu thích",
                     onClick = onNavigateToWishlist
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Outlined.Checkroom,
-                    title = "Tủ đồ của tôi (My Closet — F22)",
+                    title = "Tủ đồ của tôi",
                     onClick = onNavigateToCloset
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Filled.ShoppingBag,
-                    title = "Đơn bán của tôi (Seller Orders — F24)",
+                    title = "Đơn bán của tôi",
                     onClick = onNavigateToSellerOrders
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Filled.SwapHoriz,
-                    title = "Yêu cầu đổi đồ (Swap Requests — F28)",
+                    title = "Yêu cầu đổi đồ",
                     onClick = onNavigateToSwapRequests
                 )
                 HorizontalDivider(color = BorderColor)
                 ProfileMenuItem(
                     icon = Icons.Filled.LocationOn,
-                    title = "Thông báo hệ thống (Notifications — F31)",
+                    title = "Thông báo hệ thống",
                     onClick = onNavigateToNotifications
                 )
             }
@@ -515,7 +515,7 @@ fun ProfileScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(96.dp))
     }
 }
 

@@ -25,6 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import com.swapshe.app.ui.responsive.rememberWindowSizeInfo
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
@@ -80,6 +82,8 @@ fun SellerProfileScreen(
         MockData.defaultSellerLinh
     }
 
+    val windowSizeInfo = rememberWindowSizeInfo()
+    val columns = windowSizeInfo.productGridColumns()
     val sellerListings = remember(products, seller.id) { products.filter { it.seller.id == seller.id } }
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -102,7 +106,7 @@ fun SellerProfileScreen(
             }
             Text(
                 text = "Hồ sơ người bán",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
@@ -118,6 +122,7 @@ fun SellerProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .responsiveContainerWidth(1080.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
@@ -139,7 +144,7 @@ fun SellerProfileScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = seller.shopName,
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = FontFamily.SansSerif,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -244,8 +249,9 @@ fun SellerProfileScreen(
                 label = "tabContent"
             ) { tabIndex ->
                 if (tabIndex == 0) {
+                    val itemWidthFraction = (1f / columns) - 0.02f
                     FlowRow(
-                        maxItemsInEachRow = 2,
+                        maxItemsInEachRow = columns,
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -255,7 +261,7 @@ fun SellerProfileScreen(
                                 product = product,
                                 onClick = { onNavigateToProduct(product.id) },
                                 onLikeToggle = { repository.toggleLike(product.id) },
-                                modifier = Modifier.fillMaxWidth(0.478f)
+                                modifier = Modifier.fillMaxWidth(itemWidthFraction)
                             )
                         }
                     }

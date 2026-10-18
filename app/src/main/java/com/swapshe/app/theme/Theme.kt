@@ -13,24 +13,26 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = Primary,
+    primary = PureBlack,
     onPrimary = Color.White,
-    primaryContainer = PrimarySoft15,
-    onPrimaryContainer = Primary,
-    secondary = PrimarySoft,
-    onSecondary = TextPrimary,
-    background = WarmCream,
-    onBackground = TextPrimary,
-    surface = SurfaceWhite,
-    onSurface = TextPrimary,
-    surfaceVariant = SurfaceAlt,
-    onSurfaceVariant = TextSecondary,
-    outline = BorderColor,
-    outlineVariant = BorderSubtle,
-    error = ErrorRed,
+    primaryContainer = PrimaryContainer,
+    onPrimaryContainer = MinimalInk,
+    secondary = DarkCharcoal,
+    onSecondary = Color.White,
+    tertiary = PureBlack,
+    onTertiary = Color.White,
+    background = Color.White,
+    onBackground = MinimalInk,
+    surface = Color.White,
+    onSurface = MinimalInk,
+    surfaceVariant = BackgroundSubtle,
+    onSurfaceVariant = MinimalMuted,
+    outline = MinimalOutline,
+    outlineVariant = ElectricBorderSubtle,
+    error = ActiveIconRed,
     onError = Color.White,
     errorContainer = ErrorBg,
-    onErrorContainer = ErrorRed
+    onErrorContainer = ActiveIconRed
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -64,8 +66,8 @@ fun SwapSheTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.surface.toArgb()
+            window.statusBarColor = Color.Transparent.toArgb()
+            window.navigationBarColor = Color.Transparent.toArgb()
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme

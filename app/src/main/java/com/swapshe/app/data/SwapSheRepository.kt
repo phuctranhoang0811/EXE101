@@ -39,16 +39,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class SwapSheRepository private constructor() {
+class SwapSheRepository private constructor() : ISwapSheRepository {
 
     // Role Switching for Demo & QA Architect Testing
     private val _currentRole = MutableStateFlow(UserRole.BUYER)
-    val currentRole: StateFlow<UserRole> = _currentRole.asStateFlow()
+    override val currentRole: StateFlow<UserRole> = _currentRole.asStateFlow()
 
     // SQLite Database Helper for User Wardrobe/Closet CRUD
     private var dbHelper: com.swapshe.app.data.db.SwapSheDbHelper? = null
 
-    fun initDatabase(context: android.content.Context) {
+    override fun initDatabase(context: android.content.Context) {
         if (dbHelper == null) {
             val helper = com.swapshe.app.data.db.SwapSheDbHelper(context.applicationContext)
             dbHelper = helper
@@ -79,7 +79,7 @@ class SwapSheRepository private constructor() {
         }
     }
 
-    fun setRole(role: UserRole) {
+    override fun setRole(role: UserRole) {
         _currentRole.value = role
         val newUser = when (role) {
             UserRole.BUYER -> MockData.demoBuyerUser
@@ -144,10 +144,19 @@ class SwapSheRepository private constructor() {
             )
         )
     )
-    val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
+    override val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
 
     private val _currentUser = MutableStateFlow(MockData.initialUser)
-    val currentUser: StateFlow<User> = _currentUser.asStateFlow()
+    override val currentUser: StateFlow<User> = _currentUser.asStateFlow()
+
+    // Personal Product Ratings & Notes
+    private val _productRatingsAndNotes = MutableStateFlow<Map<String, Pair<Float, String>>>(
+        mapOf(
+            "p1" to Pair(4.5f, "Form áo vừa vặn, màu be phối đồ vintage rất đẹp."),
+            "p2" to Pair(5.0f, "Chất dạ tweed dày dặn, cúc ngọc trai sang chảnh.")
+        )
+    )
+    override val productRatingsAndNotes: StateFlow<Map<String, Pair<Float, String>>> = _productRatingsAndNotes.asStateFlow()
 
     // Flow G: Escrow & Wallet State
     private val _wallet = MutableStateFlow(
@@ -188,51 +197,51 @@ class SwapSheRepository private constructor() {
             )
         )
     )
-    val wallet: StateFlow<Wallet> = _wallet.asStateFlow()
+    override val wallet: StateFlow<Wallet> = _wallet.asStateFlow()
 
     // Flow H: She-Trust & eKYC State
     private val _sheTrustProfile = MutableStateFlow(SheTrustProfile())
-    val sheTrustProfile: StateFlow<SheTrustProfile> = _sheTrustProfile.asStateFlow()
+    override val sheTrustProfile: StateFlow<SheTrustProfile> = _sheTrustProfile.asStateFlow()
 
     // Public explore products
     private val _products = MutableStateFlow(MockData.products)
-    val products: StateFlow<List<Product>> = _products.asStateFlow()
+    override val products: StateFlow<List<Product>> = _products.asStateFlow()
 
     // User's own closet (F22)
     private val _myCloset = MutableStateFlow(MockData.myClosetInitial)
-    val myCloset: StateFlow<List<Product>> = _myCloset.asStateFlow()
+    override val myCloset: StateFlow<List<Product>> = _myCloset.asStateFlow()
 
     // Buyer orders (F18)
     private val _orders = MutableStateFlow(MockData.initialOrders)
-    val orders: StateFlow<List<Order>> = _orders.asStateFlow()
+    override val orders: StateFlow<List<Order>> = _orders.asStateFlow()
 
     // Seller incoming orders (F24)
     private val _sellerOrders = MutableStateFlow(MockData.initialSellerOrders)
-    val sellerOrders: StateFlow<List<Order>> = _sellerOrders.asStateFlow()
+    override val sellerOrders: StateFlow<List<Order>> = _sellerOrders.asStateFlow()
 
     // Direct Swap Offers (F28)
     private val _swapOffers = MutableStateFlow(MockData.initialSwapOffers)
-    val swapOffers: StateFlow<List<SwapOffer>> = _swapOffers.asStateFlow()
+    override val swapOffers: StateFlow<List<SwapOffer>> = _swapOffers.asStateFlow()
 
     // Active Swap Transactions (F29)
     private val _swapTransactions = MutableStateFlow(MockData.initialSwapTransactions)
-    val swapTransactions: StateFlow<List<SwapTransaction>> = _swapTransactions.asStateFlow()
+    override val swapTransactions: StateFlow<List<SwapTransaction>> = _swapTransactions.asStateFlow()
 
     // Disputes and Reports (F30)
     private val _disputes = MutableStateFlow(MockData.initialDisputes)
-    val disputes: StateFlow<List<DisputeReport>> = _disputes.asStateFlow()
+    override val disputes: StateFlow<List<DisputeReport>> = _disputes.asStateFlow()
 
     private val _pendingCheckoutProduct = MutableStateFlow<Product?>(null)
-    val pendingCheckoutProduct: StateFlow<Product?> = _pendingCheckoutProduct.asStateFlow()
+    override val pendingCheckoutProduct: StateFlow<Product?> = _pendingCheckoutProduct.asStateFlow()
 
     private val _currentAddress = MutableStateFlow(MockData.defaultAddress)
-    val currentAddress: StateFlow<ShippingAddress> = _currentAddress.asStateFlow()
+    override val currentAddress: StateFlow<ShippingAddress> = _currentAddress.asStateFlow()
 
     private val _toastMessage = MutableStateFlow<String?>(null)
-    val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
+    override val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
 
     private val _notifications = MutableStateFlow(MockData.notifications)
-    val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
+    override val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
 
     // Smart Wishlist & Saved Search (Flow E / F13)
     private val _savedSearches = MutableStateFlow(listOf(
@@ -255,9 +264,9 @@ class SwapSheRepository private constructor() {
             createdAt = "12/10/2026"
         )
     ))
-    val savedSearches: StateFlow<List<com.swapshe.app.model.SavedSearch>> = _savedSearches.asStateFlow()
+    override val savedSearches: StateFlow<List<com.swapshe.app.model.SavedSearch>> = _savedSearches.asStateFlow()
 
-    fun addSavedSearch(query: String, style: String?, size: String?, maxPrice: Long?) {
+    override fun addSavedSearch(query: String, style: String?, size: String?, maxPrice: Long?) {
         val newSearch = com.swapshe.app.model.SavedSearch(
             id = "search_${System.currentTimeMillis()}",
             query = query,
@@ -271,32 +280,32 @@ class SwapSheRepository private constructor() {
         showToast("Đã lưu bộ lọc tìm kiếm! Hệ thống sẽ thông báo khi có đồ mới ✨")
     }
 
-    fun removeSavedSearch(id: String) {
+    override fun removeSavedSearch(id: String) {
         _savedSearches.value = _savedSearches.value.filter { it.id != id }
         showToast("Đã xóa bộ lọc tìm kiếm.")
     }
 
-    fun toggleSavedSearchAlert(id: String) {
+    override fun toggleSavedSearchAlert(id: String) {
         _savedSearches.value = _savedSearches.value.map {
             if (it.id == id) it.copy(notifyNewItem = !it.notifyNewItem) else it
         }
     }
 
-    fun markNotificationAsRead(id: String) {
+    override fun markNotificationAsRead(id: String) {
         _notifications.value = _notifications.value.map {
             if (it.id == id) it.copy(isRead = true) else it
         }
     }
 
-    fun showToast(message: String) {
+    override fun showToast(message: String) {
         _toastMessage.value = message
     }
 
-    fun clearToast() {
+    override fun clearToast() {
         _toastMessage.value = null
     }
 
-    fun setGuestMode() {
+    override fun setGuestMode() {
         _currentUser.value = User(
             id = "guest_temp",
             name = "Guest Traveler",
@@ -305,7 +314,7 @@ class SwapSheRepository private constructor() {
         )
     }
 
-    fun login(email: String, name: String = "Hoàng My") {
+    override fun login(email: String, name: String) {
         _currentUser.value = MockData.initialUser.copy(
             email = email,
             name = name,
@@ -313,7 +322,7 @@ class SwapSheRepository private constructor() {
         )
     }
 
-    fun register(email: String, name: String) {
+    override fun register(email: String, name: String) {
         _currentUser.value = User(
             id = "user_${System.currentTimeMillis()}",
             name = name,
@@ -323,16 +332,16 @@ class SwapSheRepository private constructor() {
         )
     }
 
-    fun logout() {
+    override fun logout() {
         setGuestMode()
     }
 
-    fun updatePreferences(
-        styles: Set<String>? = null,
-        size: String? = null,
-        colors: Set<String>? = null,
-        measurements: BodyMeasurements? = null,
-        skinTone: String? = null
+    override fun updatePreferences(
+        styles: Set<String>?,
+        size: String?,
+        colors: Set<String>?,
+        measurements: BodyMeasurements?,
+        skinTone: String?
     ) {
         val curr = _currentUser.value
         _currentUser.value = curr.copy(
@@ -344,7 +353,7 @@ class SwapSheRepository private constructor() {
         )
     }
 
-    fun toggleLike(productId: String) {
+    override fun toggleLike(productId: String) {
         _products.value = _products.value.map { product ->
             if (product.id == productId) {
                 product.copy(isLiked = !product.isLiked)
@@ -352,16 +361,16 @@ class SwapSheRepository private constructor() {
         }
     }
 
-    fun setPendingCheckout(product: Product?) {
+    override fun setPendingCheckout(product: Product?) {
         _pendingCheckoutProduct.value = product
     }
 
-    fun updateShippingAddress(address: ShippingAddress) {
+    override fun updateShippingAddress(address: ShippingAddress) {
         _currentAddress.value = address
     }
 
     // --- BUYER ORDER OPERATIONS ---
-    fun createOrder(product: Product, address: ShippingAddress, isCod: Boolean = false): Order {
+    override fun createOrder(product: Product, address: ShippingAddress, isCod: Boolean): Order {
         val dateStr = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
         val randomSeq = (100..999).random()
         val orderCode = "SW-$dateStr-$randomSeq"
@@ -425,7 +434,7 @@ class SwapSheRepository private constructor() {
         return newOrder
     }
 
-    fun confirmDelivery(orderId: String) {
+    override fun confirmDelivery(orderId: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         var releasedAmount = 0L
         var orderCode = ""
@@ -476,7 +485,7 @@ class SwapSheRepository private constructor() {
         showToast("Đã xác nhận nhận hàng! Tiền ký quỹ đã được giải ngân cho người bán.")
     }
 
-    fun reviewOrder(orderId: String, rating: Int, comment: String) {
+    override fun reviewOrder(orderId: String, rating: Int, comment: String) {
         _orders.value = _orders.value.map { order ->
             if (order.id == orderId) {
                 order.copy(review = OrderReview(rating, comment))
@@ -490,8 +499,13 @@ class SwapSheRepository private constructor() {
         showToast("Cảm ơn bạn đã gửi đánh giá!")
     }
 
+    override fun saveProductRatingAndNotes(productId: String, rating: Float, notes: String) {
+        _productRatingsAndNotes.value = _productRatingsAndNotes.value + (productId to Pair(rating, notes))
+        showToast("Đã lưu đánh giá & ghi chú thành công!")
+    }
+
     // --- SELLER CLOSET (F22 - F25) ---
-    fun saveListing(product: Product, isPublish: Boolean) {
+    override fun saveListing(product: Product, isPublish: Boolean) {
         val currentUserId = _currentUser.value.id
         val updatedProduct = product.copy(
             ownerId = currentUserId,
@@ -541,14 +555,14 @@ class SwapSheRepository private constructor() {
         }
     }
 
-    fun deleteDraft(productId: String) {
+    override fun deleteDraft(productId: String) {
         // Delete from SQLite Database (Delete CRUD)
         dbHelper?.deleteProduct(productId)
         _myCloset.value = _myCloset.value.filter { it.id != productId }
         showToast("Đã xóa món đồ khỏi tủ đồ.")
     }
 
-    fun updateSellerOrderStatus(orderId: String, nextStatus: OrderStatus) {
+    override fun updateSellerOrderStatus(orderId: String, nextStatus: OrderStatus) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         val statusMapper: (Order) -> Order = { order ->
             if (order.id == orderId) {
@@ -572,7 +586,7 @@ class SwapSheRepository private constructor() {
     }
 
     // --- DIRECT SWAP OPERATIONS (F26 - F29) ---
-    fun sendSwapOffer(requestedProduct: Product, offeredProduct: Product, note: String) {
+    override fun sendSwapOffer(requestedProduct: Product, offeredProduct: Product, note: String) {
         val timeNow = SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault()).format(Date())
         val newOffer = SwapOffer(
             id = "swap_${System.currentTimeMillis()}",
@@ -592,7 +606,7 @@ class SwapSheRepository private constructor() {
         showToast("Đã gửi đề nghị trao đổi 1-1! Chờ người bán phản hồi nhé ✨")
     }
 
-    fun acceptSwapOffer(offerId: String): String? {
+    override fun acceptSwapOffer(offerId: String): String? {
         val offer = _swapOffers.value.find { it.id == offerId } ?: return null
 
         // Check availability: only block if explicitly SOLD
@@ -661,7 +675,7 @@ class SwapSheRepository private constructor() {
         return txId
     }
 
-    fun depositSwapEscrow(transactionId: String, isUserA: Boolean) {
+    override fun depositSwapEscrow(transactionId: String, isUserA: Boolean) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _swapTransactions.value = _swapTransactions.value.map { tx ->
             if (tx.id == transactionId) {
@@ -683,21 +697,21 @@ class SwapSheRepository private constructor() {
         showToast("✓ Đã ký quỹ cọc Escrow 50.000đ thành công!")
     }
 
-    fun rejectSwapOffer(offerId: String) {
+    override fun rejectSwapOffer(offerId: String) {
         _swapOffers.value = _swapOffers.value.map {
             if (it.id == offerId) it.copy(status = SwapOfferStatus.REJECTED) else it
         }
         showToast("Đã từ chối lời mời đổi đồ.")
     }
 
-    fun cancelSwapOffer(offerId: String) {
+    override fun cancelSwapOffer(offerId: String) {
         _swapOffers.value = _swapOffers.value.map {
             if (it.id == offerId) it.copy(status = SwapOfferStatus.CANCELLED) else it
         }
         showToast("Đã hủy lời mời đổi đồ.")
     }
 
-    fun dispatchSwapShipment(transactionId: String, isUserA: Boolean) {
+    override fun dispatchSwapShipment(transactionId: String, isUserA: Boolean) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _swapTransactions.value = _swapTransactions.value.map { tx ->
             if (tx.id == transactionId) {
@@ -722,7 +736,7 @@ class SwapSheRepository private constructor() {
         showToast("Đã ghi nhận gửi hàng thành công!")
     }
 
-    fun confirmSwapReceived(transactionId: String, isUserA: Boolean) {
+    override fun confirmSwapReceived(transactionId: String, isUserA: Boolean) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _swapTransactions.value = _swapTransactions.value.map { tx ->
             if (tx.id == transactionId) {
@@ -758,7 +772,7 @@ class SwapSheRepository private constructor() {
     }
 
     // --- TRUST & REPORT (F30) ---
-    fun submitDispute(targetType: DisputeTargetType, targetId: String, targetTitle: String, reason: String, description: String): DisputeReport {
+    override fun submitDispute(targetType: DisputeTargetType, targetId: String, targetTitle: String, reason: String, description: String): DisputeReport {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         val newDispute = DisputeReport(
             id = "case_${System.currentTimeMillis()}",
@@ -794,15 +808,15 @@ class SwapSheRepository private constructor() {
     }
 
     // Extended Dispute with Media proof and Escrow Freeze
-    fun submitDisputeWithMedia(
+    override fun submitDisputeWithMedia(
         targetType: DisputeTargetType,
         targetId: String,
         targetTitle: String,
         reason: String,
         description: String,
-        evidencePhotos: List<String> = emptyList(),
-        evidenceVideoUrl: String? = null,
-        requestedAmount: Long? = null
+        evidencePhotos: List<String>,
+        evidenceVideoUrl: String?,
+        requestedAmount: Long?
     ): DisputeReport {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         val newDispute = DisputeReport(
@@ -842,7 +856,7 @@ class SwapSheRepository private constructor() {
         return newDispute
     }
 
-    fun sellerRespondDispute(disputeId: String, offerType: DisputeOfferType, partialAmount: Long?, message: String) {
+    override fun sellerRespondDispute(disputeId: String, offerType: DisputeOfferType, partialAmount: Long?, message: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _disputes.value = _disputes.value.map { d ->
             if (d.id == disputeId) {
@@ -859,7 +873,7 @@ class SwapSheRepository private constructor() {
         showToast("Người bán đã gửi phản hồi thương lượng cho khiếu nại.")
     }
 
-    fun buyerAcceptDisputeOffer(disputeId: String) {
+    override fun buyerAcceptDisputeOffer(disputeId: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _disputes.value = _disputes.value.map { d ->
             if (d.id == disputeId) {
@@ -888,7 +902,7 @@ class SwapSheRepository private constructor() {
         showToast("Đã chấp thuận giải pháp! Tiền đã được hoàn về Ví SwapShe của bạn.")
     }
 
-    fun escalateDisputeToAdmin(disputeId: String) {
+    override fun escalateDisputeToAdmin(disputeId: String) {
         _disputes.value = _disputes.value.map { d ->
             if (d.id == disputeId) {
                 d.copy(
@@ -900,7 +914,7 @@ class SwapSheRepository private constructor() {
         showToast("Đã gửi yêu cầu Admin SwapShe đứng ra phân xử!")
     }
 
-    fun adminResolveDispute(disputeId: String, returnApproved: Boolean) {
+    override fun adminResolveDispute(disputeId: String, returnApproved: Boolean) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _disputes.value = _disputes.value.map { d ->
             if (d.id == disputeId) {
@@ -924,7 +938,7 @@ class SwapSheRepository private constructor() {
         showToast("Admin đã đưa ra phán quyết giải quyết tranh chấp.")
     }
 
-    fun sellerRejectDispute(disputeId: String, reason: String = "Sản phẩm gửi đi hoàn toàn nguyên vẹn đúng mô tả") {
+    override fun sellerRejectDispute(disputeId: String, reason: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _disputes.value = _disputes.value.map { d ->
             if (d.id == disputeId) {
@@ -942,7 +956,7 @@ class SwapSheRepository private constructor() {
         showToast("Người bán đã từ chối khiếu nại. Đã chuyển hồ sơ cho SwapShe Admin.")
     }
 
-    fun sellerConfirmReturnReceived(disputeId: String) {
+    override fun sellerConfirmReturnReceived(disputeId: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         _disputes.value = _disputes.value.map { d ->
             if (d.id == disputeId) {
@@ -973,7 +987,7 @@ class SwapSheRepository private constructor() {
     }
 
     // Flow G: Payout Withdrawal
-    fun withdrawFunds(amount: Long, bank: BankPayoutAccount): Boolean {
+    override fun withdrawFunds(amount: Long, bank: BankPayoutAccount): Boolean {
         val curr = _wallet.value
         if (amount <= 0 || amount > curr.availableBalance) {
             showToast("Số dư khả dụng không đủ để rút số tiền này.")
@@ -999,7 +1013,7 @@ class SwapSheRepository private constructor() {
     }
 
     // Flow H: eKYC & Trust Score
-    fun submitEkyc(doc: EkycDocument) {
+    override fun submitEkyc(doc: EkycDocument) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
         val updatedProfile = _sheTrustProfile.value.copy(
             status = EkycStatus.VERIFIED,
@@ -1015,7 +1029,7 @@ class SwapSheRepository private constructor() {
     }
 
     // Flow E: Fit Score calculation
-    fun calculateFitScore(user: User, product: Product): Int {
+    override fun calculateFitScore(user: User, product: Product): Int {
         var score = 86
         if (user.sizePreference != null && user.sizePreference.equals(product.size, ignoreCase = true)) {
             score += 5
@@ -1033,7 +1047,7 @@ class SwapSheRepository private constructor() {
     }
 
     // Flow H: Anti-scam keywords detection & Chat send
-    fun checkMessageForOutPlatformScam(text: String): String? {
+    override fun checkMessageForOutPlatformScam(text: String): String? {
         val lower = text.lowercase()
         val riskKeywords = listOf("chuyển khoản riêng", "stk", "zalo", "ngân hàng riêng", "chuyển riêng", "ck riêng", "số tài khoản", "09", "03", "07", "08")
         for (k in riskKeywords) {
@@ -1044,7 +1058,7 @@ class SwapSheRepository private constructor() {
         return null
     }
 
-    fun sendChatMessage(text: String, recipientName: String = "Người bán"): ChatMessage {
+    override fun sendChatMessage(text: String, recipientName: String): ChatMessage {
         val timeNow = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         val scamWarning = checkMessageForOutPlatformScam(text)
         val newMsg = ChatMessage(
@@ -1065,7 +1079,7 @@ class SwapSheRepository private constructor() {
     }
 
     // Helper for testing order status transitions (Syncs both Buyer and Seller)
-    fun advanceOrderStatus(orderId: String) {
+    override fun advanceOrderStatus(orderId: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         var nextStatusToToast: OrderStatus? = null
 
@@ -1093,7 +1107,7 @@ class SwapSheRepository private constructor() {
     }
 
     // Flow D: Admin Dispute Arbitration Decision
-    fun resolveDisputeByAdmin(disputeId: String, refundToBuyer: Boolean, note: String = "") {
+    override fun resolveDisputeByAdmin(disputeId: String, refundToBuyer: Boolean, note: String) {
         val timeNow = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         val dispute = _disputes.value.find { it.id == disputeId } ?: return
 

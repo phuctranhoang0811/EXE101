@@ -74,7 +74,7 @@ fun AuthGateModal(
 
                 Text(
                     text = "Đăng nhập để tiếp tục",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary

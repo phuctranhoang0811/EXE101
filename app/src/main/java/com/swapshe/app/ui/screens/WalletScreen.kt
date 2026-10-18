@@ -56,7 +56,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.swapshe.app.data.SwapSheRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swapshe.app.ui.viewmodels.WalletViewModel
 import com.swapshe.app.model.BankPayoutAccount
 import com.swapshe.app.model.WalletTransaction
 import com.swapshe.app.model.WalletTransactionType
@@ -82,11 +83,11 @@ import java.util.Locale
 @Composable
 fun WalletScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToExplore: () -> Unit
+    onNavigateToExplore: () -> Unit,
+    viewModel: WalletViewModel = viewModel(factory = WalletViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val wallet by repository.wallet.collectAsState()
-    val trustProfile by repository.sheTrustProfile.collectAsState()
+    val wallet by viewModel.wallet.collectAsState()
+    val trustProfile by viewModel.trustProfile.collectAsState()
 
     var showWithdrawDialog by remember { mutableStateOf(false) }
     var withdrawAmountText by remember { mutableStateOf("") }
@@ -114,7 +115,7 @@ fun WalletScreen(
             }
             Text(
                 text = "Ví SwapShe & Dòng tiền Ký quỹ",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -185,7 +186,7 @@ fun WalletScreen(
 
                             Text(
                                 text = "${formatter.format(wallet.availableBalance)}đ",
-                                fontFamily = FontFamily.Serif,
+                                fontFamily = FontFamily.SansSerif,
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Primary
@@ -240,7 +241,7 @@ fun WalletScreen(
                             }
                             Text(
                                 text = "${formatter.format(wallet.escrowHoldBalance)}đ",
-                                fontFamily = FontFamily.Serif,
+                                fontFamily = FontFamily.SansSerif,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EscrowBlue
@@ -296,7 +297,7 @@ fun WalletScreen(
                 ) {
                     Text(
                         text = "Lịch sử biến động dòng tiền",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = FontFamily.SansSerif,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -323,7 +324,7 @@ fun WalletScreen(
             title = {
                 Text(
                     text = "Rút tiền về Tài khoản Ngân hàng",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -400,10 +401,10 @@ fun WalletScreen(
                         val amount = withdrawAmountText.toLongOrNull() ?: 0L
                         if (amount > 0) {
                             val bank = BankPayoutAccount(selectedBank, accountNumber, accountHolder)
-                            val ok = repository.withdrawFunds(amount, bank)
+                            val ok = viewModel.withdrawFunds(amount, bank)
                             if (ok) showWithdrawDialog = false
                         } else {
-                            repository.showToast("Vui lòng nhập số tiền rút hợp lệ.")
+                            viewModel.showToast("Vui lòng nhập số tiền rút hợp lệ.")
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)

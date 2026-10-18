@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
+import com.swapshe.app.ui.components.ProductRatingNotesModal
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,6 +42,11 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,8 +62,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import coil.compose.AsyncImage
 import com.swapshe.app.data.MockData
 import com.swapshe.app.data.SwapSheRepository
@@ -80,27 +89,23 @@ import com.swapshe.app.theme.WarningAmber
 import com.swapshe.app.theme.WarningBg
 import java.text.DecimalFormat
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swapshe.app.ui.viewmodels.OrdersViewModel
+
 /* --------------------------------------------------------------------------
    F18: MY ORDERS SCREEN
    -------------------------------------------------------------------------- */
 @Composable
 fun MyOrdersScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToOrderDetail: (String) -> Unit
+    onNavigateToOrderDetail: (String) -> Unit,
+    viewModel: OrdersViewModel = viewModel(factory = OrdersViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val orders by repository.orders.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) }
+    val orders by viewModel.orders.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsState()
+    val filteredOrders by viewModel.filteredOrders.collectAsState()
     val tabs = listOf("Tất cả", "Đang xử lý", "Hoàn tất")
     val formatter = DecimalFormat("#,###")
-
-    val filteredOrders = remember(orders, selectedTab) {
-        when (selectedTab) {
-            1 -> orders.filter { it.status == OrderStatus.PAID || it.status == OrderStatus.PREPARING || it.status == OrderStatus.SHIPPED || it.status == OrderStatus.DELIVERED }
-            2 -> orders.filter { it.status == OrderStatus.COMPLETED }
-            else -> orders
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -119,8 +124,8 @@ fun MyOrdersScreen(
                 Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(
-                text = "Đơn mua của tôi (My Orders)",
-                fontFamily = FontFamily.Serif,
+                text = "Đơn mua của tôi",
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
@@ -142,7 +147,7 @@ fun MyOrdersScreen(
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
-                    onClick = { selectedTab = index },
+                    onClick = { viewModel.onTabSelect(index) },
                     text = {
                         Text(
                             text = title,
@@ -154,66 +159,116 @@ fun MyOrdersScreen(
             }
         }
 
-        // Virtualized Orders list
-        if (filteredOrders.isEmpty()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth().padding(top = 48.dp)
-            ) {
-                Text(text = "Chưa có đơn hàng nào trong mục này", fontSize = 14.sp, color = TextMuted)
+        // Animated Orders list
+        AnimatedContent(
+            targetState = selectedTab,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+            },
+            label = "ordersTabContent"
+        ) { tabIndex ->
+            val tabOrders = when (tabIndex) {
+                1 -> orders.filter { it.status == OrderStatus.PAID || it.status == OrderStatus.PREPARING || it.status == OrderStatus.SHIPPED || it.status == OrderStatus.DELIVERED }
+                2 -> orders.filter { it.status == OrderStatus.COMPLETED }
+                else -> orders
             }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filteredOrders, key = { it.id }) { order ->
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = SurfaceWhite,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
-                        modifier = Modifier
-                            .animateItem()
-                            .fillMaxWidth()
-                            .clickable { onNavigateToOrderDetail(order.id) }
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = order.internalCode, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                val (statusBg, statusColor) = when (order.status) {
-                                    OrderStatus.COMPLETED -> SuccessBg to SuccessGreen
-                                    OrderStatus.DISPUTED -> ErrorBg to ErrorRed
-                                    else -> WarningBg to WarningAmber
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .background(statusBg, RoundedCornerShape(100.dp))
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+
+            if (tabOrders.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(top = 48.dp)
+                ) {
+                    Text(text = "Chưa có đơn hàng nào trong mục này", fontSize = 14.sp, color = TextMuted)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(tabOrders, key = { it.id }) { order ->
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = SurfaceWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                            modifier = Modifier
+                                .animateItem()
+                                .fillMaxWidth()
+                                .clickable { onNavigateToOrderDetail(order.id) }
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = order.status.label, color = statusColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = order.internalCode,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    val (statusBg, statusColor) = when (order.status) {
+                                        OrderStatus.COMPLETED -> SuccessBg to SuccessGreen
+                                        OrderStatus.DISPUTED -> ErrorBg to ErrorRed
+                                        else -> WarningBg to WarningAmber
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(statusBg, RoundedCornerShape(100.dp))
+                                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = order.status.label,
+                                            color = statusColor,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
                                 }
-                            }
 
-                            HorizontalDivider(color = BorderColor, modifier = Modifier.padding(vertical = 10.dp))
+                                HorizontalDivider(color = BorderColor, modifier = Modifier.padding(vertical = 10.dp))
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(
-                                    model = order.item.images.firstOrNull() ?: "",
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(54.dp).clip(RoundedCornerShape(8.dp))
-                                )
-                                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                                    Text(text = order.item.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                                    Text(text = "Shop: ${order.item.seller.shopName}", fontSize = 11.sp, color = TextMuted)
-                                    Text(text = "Tổng: ${formatter.format(order.total)}đ", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Primary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    AsyncImage(
+                                        model = order.item.images.firstOrNull() ?: "",
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(54.dp).clip(RoundedCornerShape(8.dp))
+                                    )
+                                    Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                                        Text(
+                                            text = order.item.title,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = TextPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "Shop: ${order.item.seller.shopName}",
+                                            fontSize = 11.sp,
+                                            color = TextMuted,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "Tổng: ${formatter.format(order.total)}đ",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Primary,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
+                                    Icon(imageVector = Icons.Filled.ChevronRight, contentDescription = null, tint = TextMuted)
                                 }
-                                Icon(imageVector = Icons.Filled.ChevronRight, contentDescription = null, tint = TextMuted)
                             }
                         }
                     }
@@ -231,16 +286,16 @@ fun OrderDetailScreen(
     orderId: String,
     onNavigateBack: () -> Unit,
     onNavigateToReport: (String, String) -> Unit = { _, _ -> },
-    onNavigateToDisputeDetail: (String) -> Unit = {}
+    onNavigateToDisputeDetail: (String) -> Unit = {},
+    viewModel: OrdersViewModel = viewModel(factory = OrdersViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val orders by repository.orders.collectAsState()
+    val orders by viewModel.orders.collectAsState()
     val order = orders.find { it.id == orderId } ?: orders.firstOrNull() ?: MockData.initialOrders.first()
 
     val formatter = DecimalFormat("#,###")
-    var showReviewDialog by remember { mutableStateOf(false) }
-    var reviewRating by remember { mutableStateOf(5) }
-    var reviewComment by remember { mutableStateOf("") }
+    val showReviewDialog by viewModel.showReviewDialog.collectAsState()
+    val reviewRating by viewModel.reviewRating.collectAsState()
+    val reviewComment by viewModel.reviewComment.collectAsState()
 
     Column(
         modifier = Modifier
@@ -261,13 +316,13 @@ fun OrderDetailScreen(
             }
             Text(
                 text = "Chi tiết đơn hàng",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary
             )
             // Demo Action: Fast forward status for interactive testing
-            IconButton(onClick = { repository.advanceOrderStatus(order.id) }) {
+            IconButton(onClick = { viewModel.advanceOrderStatus(order.id) }) {
                 Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Advance Demo State", tint = Primary)
             }
         }
@@ -464,14 +519,19 @@ fun OrderDetailScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
                 when (order.status) {
                     OrderStatus.DELIVERED -> {
                         PrimaryButton(
                             text = "✓ Đã nhận được hàng (Confirm Received)",
-                            onClick = { repository.confirmDelivery(order.id) }
+                            onClick = { viewModel.confirmDelivery(order.id) }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         SecondaryButton(
@@ -483,7 +543,7 @@ fun OrderDetailScreen(
                         if (order.review == null) {
                             PrimaryButton(
                                 text = "⭐ Viết đánh giá người bán (Review Order)",
-                                onClick = { showReviewDialog = true }
+                                onClick = { viewModel.openReviewDialog() }
                             )
                         } else {
                             PrimaryButton(
@@ -519,73 +579,16 @@ fun OrderDetailScreen(
         }
     }
 
-    // F20: Review Order Dialog (1 to 5 stars + optional comment)
-    if (showReviewDialog) {
-        AlertDialog(
-            onDismissRequest = { showReviewDialog = false },
-            title = {
-                Text(
-                    text = "Đánh giá đơn hàng",
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Chất lượng sản phẩm và thái độ phục vụ của ${order.item.seller.shopName} như thế nào?",
-                        fontSize = 13.sp,
-                        color = TextSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        (1..5).forEach { star ->
-                            IconButton(onClick = { reviewRating = star }) {
-                                Icon(
-                                    imageVector = if (star <= reviewRating) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                    contentDescription = "$star stars",
-                                    tint = WarningAmber,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = reviewComment,
-                        onValueChange = { reviewComment = it },
-                        placeholder = { Text("Mô tả cảm nhận, chất vải, độ mới thực tế...", fontSize = 12.sp, color = TextMuted) },
-                        modifier = Modifier.fillMaxWidth().height(100.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        repository.reviewOrder(order.id, reviewRating, reviewComment)
-                        showReviewDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                ) {
-                    Text("Gửi đánh giá", color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showReviewDialog = false }) {
-                    Text("Hủy", color = TextSecondary)
-                }
-            },
-            containerColor = SurfaceWhite,
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
+    // F20: Review Order Dialog (Clean Minimalist Rating & Notes Modal)
+    ProductRatingNotesModal(
+        isVisible = showReviewDialog,
+        productTitle = order.item.title,
+        imageUrl = order.item.images.firstOrNull() ?: "",
+        initialRating = reviewRating.toFloat(),
+        initialNotes = reviewComment,
+        onDismiss = { viewModel.closeReviewDialog() },
+        onSave = { rating, notes ->
+            viewModel.submitReview(order.id, rating, notes)
+        }
+    )
 }

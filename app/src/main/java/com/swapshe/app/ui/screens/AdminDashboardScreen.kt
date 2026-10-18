@@ -127,7 +127,7 @@ fun AdminDashboardScreen(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "SwapShe Trust & Safety",
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = FontFamily.SansSerif,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

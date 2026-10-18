@@ -2,58 +2,105 @@ package com.swapshe.app.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary Brand Colors - Honey Camel Gold & Boutique Amber from Logo
-val Primary = Color(0xFFB38B4D)          // Core rich camel gold from SwapShe typography & lines
-val PrimaryHover = Color(0xFF9A743A)     // Deepened honey gold for press/hover states
-val PrimaryDark = Color(0xFF88632C)      // Luxury dark amber
-val PrimarySoft = Color(0xFFE4C99E)      // Soft golden shimmer accent
-val PrimarySoft15 = Color(0x26B38B4D)    // 15% opacity primary
-val PrimarySoft30 = Color(0x4DB38B4D)    // 30% opacity primary
+// ==========================================
+// SWAPSHE MONOCHROME (BLACK & WHITE) MINIMAL DESIGN SYSTEM
+// Style: Pure Black & White Minimal, Red accents for Toggles & Heart/Like
+// ==========================================
 
-// Blossom Pink Accent (Flower in her hair from Logo)
-val BlossomPink = Color(0xFFE09397)      // Delicate rose petal pink from the hair flower
-val BlossomPinkSoft = Color(0xFFFBDAD6)  // Soft floral blush
-val BlossomPinkBg = Color(0xFFFDF0EF)    // Subtle blush background
+// Primary Brand Colors - Pure Monochrome Deep Black
+val PureBlack = Color(0xFF000000)
+val JetBlack = Color(0xFF111111)
+val DarkCharcoal = Color(0xFF1C1C1E)
 
-// Background & Surface Colors - Warm Ivory & Velvet Cream
-val WarmCream = Color(0xFFFAF6F0)        // Logo canvas ivory cream
-val BackgroundSubtle = Color(0xFFF4ECE1) // Secondary cream tint
-val SurfaceWhite = Color(0xFFFFFFFF)     // Pure white card surfaces
-val SurfaceAlt = Color(0xFFFBF8F4)       // Alternate soft cream surface
+// Global Primary Aliases -> Pure Black & White
+val Primary = PureBlack
+val PrimaryHover = JetBlack
+val PrimaryDark = PureBlack
+val PrimarySoft = DarkCharcoal
+val PrimarySoft15 = Color(0x1A000000)
+val PrimarySoft30 = Color(0x33000000)
+val PrimaryContainer = Color(0xFFF2F2F7)
 
-// Text Colors - Deep Warm Espresso & Warm Mocha
-val TextPrimary = Color(0xFF382C24)      // Deep mocha espresso, maximum legibility & warmth
-val TextSecondary = Color(0xFF6F5E52)    // Warm latte secondary text
-val TextMuted = Color(0xFF9E8D80)        // Soft muted earth tone
+// Electric Lavender aliases mapped to Monochrome for backward compatibility
+val ElectricLavender = PureBlack
+val ElectricLavenderHover = JetBlack
+val ElectricLavenderLight = DarkCharcoal
+val ElectricLavenderSoft15 = Color(0x14000000)
+val ElectricLavenderSoft30 = Color(0x28000000)
+val ElectricLavenderSoft8 = Color(0x0A000000)
 
-// Borders
-val BorderColor = Color(0xFFE8DDD0)      // Subtle warm border
-val BorderSubtle = Color(0xFFF2EAE0)     // Ultra delicate card outline
+// Accent Lime & Pink mapped to Monochrome
+val ElectricAccent = PureBlack
+val ElectricAccentDark = JetBlack
+val ElectricAccentSoft = Color(0x1A000000)
+val AccentLime = PureBlack
+
+val BlossomPink = PureBlack
+val BlossomPinkSoft = Color(0xFFF2F2F7)
+val BlossomPinkBg = Color(0xFFF8F8FA)
+
+// Background & Surface Colors - Crisp Pure White & Subtle Minimal Grays
+val MinimalBackground = Color(0xFFFFFFFF)        // Pure White background
+val MinimalSurface = Color(0xFFFFFFFF)           // Pure White surface
+val ElectricBackground = MinimalBackground
+val ElectricSurface = MinimalSurface
+val ElectricSurfaceAlt = Color(0xFFF5F5F7)
+val SurfaceWhite = Color(0xFFFFFFFF)
+val SurfaceAlt = Color(0xFFF5F5F7)
+val WarmCream = Color(0xFFFFFFFF)                // Pure white for clean minimal aesthetic
+val BackgroundSubtle = Color(0xFFF5F5F7)
+
+// Text Colors - Pure Black & Neutral Gray
+val MinimalInk = PureBlack                       // Main text primary: Pure Black
+val MinimalMuted = Color(0xFF6E6E73)             // Subtitle/secondary: Apple Gray
+val MinimalDisabledText = Color(0xFF8E8E93)      // Disabled text
+val MinimalDisabledSurface = Color(0xFFE5E5EA)   // Disabled surface
+
+val ElectricTextPrimary = MinimalInk
+val ElectricTextSecondary = MinimalMuted
+val ElectricTextMuted = Color(0xFF8E8E93)
+val TextPrimary = MinimalInk
+val TextSecondary = MinimalMuted
+val TextMuted = Color(0xFF8E8E93)
+val DisabledText = MinimalDisabledText
+val DisabledSurface = MinimalDisabledSurface
+
+// Borders & Outlines - Crisp Light Neutral Grays
+val MinimalOutline = Color(0xFFE5E5EA)
+val ElectricBorder = MinimalOutline
+val ElectricBorderSubtle = Color(0xFFEFEFF4)
+val BorderColor = MinimalOutline
+val BorderSubtle = Color(0xFFEFEFF4)
 
 // Semantic Indicators
-val SuccessGreen = Color(0xFF6F8F70)     // Sage earthy green
-val SuccessBg = Color(0xFFEEF4EE)
-val ErrorRed = Color(0xFFBA5C52)         // Warm terracotta red
-val ErrorBg = Color(0xFFFCEEED)
-val WarningAmber = Color(0xFFC7883E)     // Warm amber warning
-val WarningBg = Color(0xFFFDF4E7)
+val MinimalSuccess = Color(0xFF1E1E1E)
+val SuccessGreen = Color(0xFF1E1E1E)
+val SuccessBg = Color(0xFFF2F2F7)
+val MinimalError = Color(0xFFFF0800)
+val ErrorRed = Color(0xFFFF0800)
+val ErrorBg = Color(0xFFFFEBEB)
+val WarningAmber = Color(0xFF333333)
+val WarningBg = Color(0xFFF2F2F7)
 
-// Dark Theme Palette - Deep Warm Chocolate & Gold
-val DarkBackground = Color(0xFF1B1612)
-val DarkSurface = Color(0xFF26201B)
-val DarkSurfaceAlt = Color(0xFF312A24)
-val DarkTextPrimary = Color(0xFFF8F2EB)
-val DarkTextSecondary = Color(0xFFD6C8BC)
-val DarkTextMuted = Color(0xFF9B8E83)
-val DarkBorder = Color(0xFF453B32)
-val DarkPrimarySoft = Color(0xFFD8B278)
+// Dark Theme Palette - Clean High-Contrast Dark
+val DarkBackground = Color(0xFF000000)
+val DarkSurface = Color(0xFF121212)
+val DarkSurfaceAlt = Color(0xFF1E1E1E)
+val DarkTextPrimary = Color(0xFFFFFFFF)
+val DarkTextSecondary = Color(0xFFB0B0B0)
+val DarkTextMuted = Color(0xFF757575)
+val DarkBorder = Color(0xFF2C2C2E)
+val DarkPrimarySoft = Color(0xFFE5E5EA)
 
-// Escrow & Trust Badges
-val EscrowBlue = Color(0xFF2E6B8C)       // Escrow protection blue
-val EscrowBg = Color(0xFFECF3F7)
-val GoldCrown = Color(0xFFB88C3C)        // Queen Closet crown gold
-val GoldBg = Color(0xFFFDF6E7)
-val MintBadge = Color(0xFF4B8C7A)
-val MintBadgeBg = Color(0xFFE9F4F1)
+// Escrow & Trust Badges - Monochrome
+val EscrowBlue = Color(0xFF1C1C1E)
+val EscrowBg = Color(0xFFF2F2F7)
+val GoldCrown = Color(0xFF1C1C1E)
+val GoldBg = Color(0xFFF2F2F7)
+val MintBadge = Color(0xFF1C1C1E)
+val MintBadgeBg = Color(0xFFF2F2F7)
 
-
+// User Request: Selected / Active Icon, Toggle & Heart Like Color -> VIBRANT RED
+val ActiveIconRed = Color(0xFFFF0800)
+val ActiveToggleRed = Color(0xFFFF0800)
+val HeartRed = Color(0xFFFF0800)

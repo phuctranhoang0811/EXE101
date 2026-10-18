@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.Primary
@@ -133,6 +134,7 @@ fun FitAssistantBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .responsiveContainerWidth(640.dp)
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -153,7 +155,7 @@ fun FitAssistantBottomSheet(
                 Column {
                     Text(
                         text = "Trợ lý chọn Size & Tone da",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = FontFamily.SansSerif,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary

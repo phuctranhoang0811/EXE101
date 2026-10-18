@@ -117,7 +117,7 @@ fun CreateSwapOfferScreen(
             }
             Text(
                 text = "Đề nghị đổi đồ 1-1",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -297,9 +297,14 @@ fun CreateSwapOfferScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+            ) {
                 PrimaryButton(
                     text = "Gửi đề nghị trao đổi ⇄",
                     enabled = selectedMyProduct != null,

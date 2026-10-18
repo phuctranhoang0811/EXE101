@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,7 +49,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.swapshe.app.data.SwapSheRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swapshe.app.ui.viewmodels.ChatViewModel
 import com.swapshe.app.model.ChatMessage
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
@@ -69,10 +71,10 @@ fun ChatScreen(
     recipientName: String = "Thùy Linh (Linh's Closet 👗)",
     productId: String? = null,
     onNavigateBack: () -> Unit,
-    onNavigateToSwapOffer: ((String) -> Unit)? = null
+    onNavigateToSwapOffer: ((String) -> Unit)? = null,
+    viewModel: ChatViewModel = viewModel(factory = ChatViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val chatMessages by repository.chatMessages.collectAsState()
+    val chatMessages by viewModel.chatMessages.collectAsState()
     var inputText by remember { mutableStateOf("") }
 
     val quickTestPrompts = listOf(
@@ -121,7 +123,7 @@ fun ChatScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = recipientName,
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = FontFamily.SansSerif,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -240,11 +242,14 @@ fun ChatScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -266,7 +271,7 @@ fun ChatScreen(
                 IconButton(
                     onClick = {
                         if (inputText.isNotBlank()) {
-                            repository.sendChatMessage(inputText, recipientName)
+                            viewModel.sendMessage(inputText, recipientName)
                             inputText = ""
                         }
                     },

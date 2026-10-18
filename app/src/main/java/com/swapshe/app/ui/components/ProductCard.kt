@@ -20,9 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -43,12 +46,16 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.swapshe.app.model.ConditionType
 import com.swapshe.app.model.Product
 import com.swapshe.app.model.ProductStatus
+import com.swapshe.app.theme.ActiveIconRed
+import com.swapshe.app.theme.AccentLime
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.ErrorBg
 import com.swapshe.app.theme.ErrorRed
@@ -147,7 +154,7 @@ fun ProductCard(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(8.dp)
-                            .background(Color(0xD944343C), RoundedCornerShape(6.dp))
+                            .background(TextPrimary.copy(alpha = 0.88f), RoundedCornerShape(6.dp))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
@@ -195,7 +202,7 @@ fun ProductCard(
                 if (matchBadgeText != null && !isSold) {
                     Surface(
                         shape = RoundedCornerShape(topEnd = 8.dp),
-                        color = Color(0xEB44343C),
+                        color = Primary,
                         modifier = Modifier.align(Alignment.BottomStart)
                     ) {
                         Row(
@@ -205,7 +212,7 @@ fun ProductCard(
                             Icon(
                                 imageVector = Icons.Filled.AutoAwesome,
                                 contentDescription = null,
-                                tint = Color(0xFFFFD700),
+                                tint = AccentLime,
                                 modifier = Modifier.size(11.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
@@ -226,14 +233,18 @@ fun ProductCard(
                     text = "${product.brand} • Size ${product.size}",
                     fontSize = 11.sp,
                     color = TextMuted,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = product.title,
                     fontSize = 13.sp,
+                    lineHeight = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary,
-                    maxLines = 1,
+                    minLines = 2,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(vertical = 2.dp)
                 )
@@ -244,9 +255,11 @@ fun ProductCard(
                 ) {
                     Text(
                         text = "${formatter.format(product.price)}đ",
-                        fontSize = 14.sp,
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Primary
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     if (product.originalPrice != null) {
                         Text(
@@ -254,7 +267,187 @@ fun ProductCard(
                             fontSize = 11.sp,
                             color = TextMuted,
                             textDecoration = TextDecoration.LineThrough,
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(start = 6.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Horizontal Special Offer Product Card matching the modern minimal fashion look from screenshot.
+ */
+@Composable
+fun ProductOfferCard(
+    product: Product,
+    onClick: () -> Unit,
+    onLikeToggle: () -> Unit,
+    onShopNow: () -> Unit = onClick,
+    onVirtualFit: () -> Unit = {},
+    isHighlighted: Boolean = false,
+    quantityMultiplier: String = "x2",
+    modifier: Modifier = Modifier
+) {
+    val priceFormatted = "$${product.price / 1000},00"
+    val haptic = LocalHapticFeedback.current
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFF8F8FA),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEFEFF2)),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Top Section: Thumbnail (Left) + Details (Center) + Heart & Multiplier (Right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Product Thumbnail in white rounded container
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White,
+                    modifier = Modifier.size(86.dp)
+                ) {
+                    AsyncImage(
+                        model = product.images.firstOrNull() ?: "",
+                        contentDescription = product.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                // Center info
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = product.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF18181B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Size : ${product.size}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF8E8E93)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = priceFormatted,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF18181B)
+                    )
+                }
+
+                // Right: Heart Button in Circle + Quantity
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .background(
+                                color = if (product.isLiked) ActiveIconRed.copy(alpha = 0.12f) else Color.White,
+                                shape = CircleShape
+                            )
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onLikeToggle()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Like",
+                            tint = if (product.isLiked) ActiveIconRed else Color(0xFFB0B0B8),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = quantityMultiplier,
+                        fontSize = 12.sp,
+                        color = Color(0xFF8E8E93),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Bottom Section: Estimate Total (Left) + Shop Now & Circle Button (Right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Estimate Total
+                Column {
+                    Text(
+                        text = "Estimate Total",
+                        fontSize = 11.sp,
+                        color = Color(0xFF8E8E93)
+                    )
+                    Text(
+                        text = priceFormatted,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF18181B)
+                    )
+                }
+
+                // Shop Now + Circle Try-on Button
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(100.dp),
+                        color = if (isHighlighted) Color(0xFF18181B) else Color(0xFFF0F0F3),
+                        modifier = Modifier.clickable(onClick = onShopNow)
+                    ) {
+                        Text(
+                            text = "Shop Now",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isHighlighted) Color.White else Color(0xFF55555C),
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 9.dp)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                color = if (isHighlighted) Color(0xFF18181B) else Color(0xFFF0F0F3),
+                                shape = CircleShape
+                            )
+                            .clickable(onClick = onVirtualFit),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Checkroom,
+                            contentDescription = "Try-on",
+                            tint = if (isHighlighted) Color.White else Color(0xFF55555C),
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 }

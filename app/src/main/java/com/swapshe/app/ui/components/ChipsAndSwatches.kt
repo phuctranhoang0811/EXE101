@@ -93,9 +93,13 @@ fun CategoryPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bgColor by animateColorAsState(if (isSelected) Primary else SurfaceWhite, tween(200), label = "catBg")
-    val textColor by animateColorAsState(if (isSelected) Color.White else TextSecondary, tween(200), label = "catText")
-    val borderColor by animateColorAsState(if (isSelected) Primary else BorderColor, tween(200), label = "catBorder")
+    val targetBgColor = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.surface
+    val targetTextColor = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.onPrimary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+    val targetBorderColor = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant
+
+    val bgColor by animateColorAsState(targetBgColor, tween(200), label = "catBg")
+    val textColor by animateColorAsState(targetTextColor, tween(200), label = "catText")
+    val borderColor by animateColorAsState(targetBorderColor, tween(200), label = "catBorder")
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.05f else 1.0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
@@ -108,7 +112,7 @@ fun CategoryPill(
         border = BorderStroke(1.dp, borderColor),
         modifier = modifier
             .scale(scale)
-            .height(36.dp)
+            .height(38.dp)
             .clickable(onClick = onClick)
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -156,7 +160,7 @@ fun StyleCard(
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color(0xB344343C)),
+                        colors = listOf(Color.Transparent, TextPrimary.copy(alpha = 0.72f)),
                         startY = 100f
                     )
                 )

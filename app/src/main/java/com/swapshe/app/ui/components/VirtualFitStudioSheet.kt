@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.swapshe.app.model.Product
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.Primary
@@ -269,6 +270,7 @@ fun VirtualFitStudioSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .responsiveContainerWidth(720.dp)
                 .padding(horizontal = 18.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -297,7 +299,7 @@ fun VirtualFitStudioSheet(
                     Column {
                         Text(
                             text = "Phòng Thử Đồ 2D & Thước Đo Vừa Vặn",
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = FontFamily.SansSerif,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -393,7 +395,7 @@ fun VirtualFitStudioSheet(
                     )
                     Text(
                         text = currentProduct.title,
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = FontFamily.SansSerif,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,

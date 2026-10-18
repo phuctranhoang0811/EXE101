@@ -107,7 +107,7 @@ fun EkycScreen(
             }
             Text(
                 text = "Định danh eKYC & She-Trust",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -139,7 +139,7 @@ fun EkycScreen(
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
                                     text = "${trustProfile.score}",
-                                    fontFamily = FontFamily.Serif,
+                                    fontFamily = FontFamily.SansSerif,
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Primary
@@ -372,11 +372,12 @@ fun EkycScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding()
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {

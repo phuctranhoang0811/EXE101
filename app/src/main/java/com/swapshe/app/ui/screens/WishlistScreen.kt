@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import com.swapshe.app.ui.responsive.rememberWindowSizeInfo
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
+import com.swapshe.app.ui.responsive.responsiveContentWidth
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +36,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -65,17 +73,20 @@ import com.swapshe.app.ui.components.ProductCard
 import java.text.NumberFormat
 import java.util.Locale
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swapshe.app.ui.viewmodels.WishlistViewModel
+
 @Composable
 fun WishlistScreen(
     onNavigateToProduct: (String) -> Unit,
-    onExploreClick: () -> Unit
+    onExploreClick: () -> Unit,
+    viewModel: WishlistViewModel = viewModel(factory = WishlistViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val products by repository.products.collectAsState()
-    val savedSearches by repository.savedSearches.collectAsState()
-    val wishlistItems = remember(products) { products.filter { it.isLiked } }
-
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Đồ đã thả tim (Saved Items), 1: Bộ lọc tìm kiếm đã lưu (Saved Searches)
+    val windowSizeInfo = rememberWindowSizeInfo()
+    val gridColumns = windowSizeInfo.productGridColumns()
+    val savedSearches by viewModel.savedSearches.collectAsState()
+    val wishlistItems by viewModel.wishlistItems.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsState()
 
     Column(
         modifier = Modifier
@@ -92,7 +103,7 @@ fun WishlistScreen(
         ) {
             Text(
                 text = "Tủ đồ yêu thích",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -108,7 +119,7 @@ fun WishlistScreen(
         ) {
             Tab(
                 selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
+                onClick = { viewModel.onTabSelect(0) },
                 text = {
                     Text(
                         text = "Món đã thích (${wishlistItems.size})",
@@ -118,7 +129,7 @@ fun WishlistScreen(
             )
             Tab(
                 selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
+                onClick = { viewModel.onTabSelect(1) },
                 text = {
                     Text(
                         text = "Bộ lọc đã lưu (${savedSearches.size})",
@@ -128,134 +139,145 @@ fun WishlistScreen(
             )
         }
 
-        if (selectedTab == 0) {
-            // Tab 1: Saved Items
-            if (wishlistItems.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
+        AnimatedContent(
+            targetState = selectedTab,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+            },
+            label = "wishlistTabContent"
+        ) { tabIndex ->
+            if (tabIndex == 0) {
+                // Tab 1: Saved Items
+                if (wishlistItems.isEmpty()) {
+                    Column(
                         modifier = Modifier
-                            .size(70.dp)
-                            .background(ErrorBg, CircleShape),
-                        contentAlignment = Alignment.Center
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Favorite,
-                            contentDescription = null,
-                            tint = ErrorRed,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Tủ đồ yêu thích còn trống",
-                        fontFamily = FontFamily.Serif,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
-                    Text(
-                        text = "Khi tìm thấy món đồ secondhand vừa mắt, bấm vào trái tim để lưu lại theo dõi.",
-                        fontSize = 13.sp,
-                        color = TextSecondary,
-                        modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
-                    )
-
-                    PrimaryButton(
-                        text = "Khám phá đồ đẹp ngay",
-                        onClick = onExploreClick
-                    )
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(wishlistItems, key = { it.id }) { product ->
-                        ProductCard(
-                            product = product,
-                            onClick = { onNavigateToProduct(product.id) },
-                            onLikeToggle = { repository.toggleLike(product.id) },
-                            modifier = Modifier.animateItem()
-                        )
-                    }
-                    item(span = { GridItemSpan(2) }) {
-                        Spacer(modifier = Modifier.height(32.dp))
-                    }
-                }
-            }
-        } else {
-            // Tab 2: Saved Searches (Flow E: Smart Wishlist matching)
-            if (savedSearches.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Search,
-                        contentDescription = null,
-                        tint = TextMuted,
-                        modifier = Modifier.size(56.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Chưa lưu bộ lọc tìm kiếm nào",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                    Text(
-                        text = "Khi khám phá đồ, bạn có thể lưu các tiêu chí size/gu để nhận thông báo tự động khi có hàng mới.",
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
-                    )
-                    PrimaryButton(
-                        text = "Khám phá & Lưu bộ lọc",
-                        onClick = onExploreClick
-                    )
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    item {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = PrimarySoft15,
-                            modifier = Modifier.fillMaxWidth()
+                        Box(
+                            modifier = Modifier
+                                .size(70.dp)
+                                .background(ErrorBg, CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "✨ Tính năng Smart Match: Khi người bán đăng đồ đúng tiêu chí size, gu thời trang hoặc mức giá dưới đây, hệ thống sẽ gửi thông báo đến bạn ngay.",
-                                fontSize = 11.sp,
-                                color = Primary,
-                                modifier = Modifier.padding(12.dp)
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = null,
+                                tint = ErrorRed,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
-                    }
 
-                    items(savedSearches, key = { it.id }) { search ->
-                        SavedSearchCard(
-                            savedSearch = search,
-                            onToggleAlert = { repository.toggleSavedSearchAlert(search.id) },
-                            onDelete = { repository.removeSavedSearch(search.id) },
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Tủ đồ yêu thích còn trống",
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Khi tìm thấy món đồ secondhand vừa mắt, bấm vào trái tim để lưu lại theo dõi.",
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
+                        )
+
+                        PrimaryButton(
+                            text = "Khám phá đồ đẹp ngay",
                             onClick = onExploreClick
                         )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(gridColumns),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        contentPadding = PaddingValues(horizontal = if (windowSizeInfo.isWideScreen) 28.dp else 20.dp, vertical = 12.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .responsiveContainerWidth(1280.dp)
+                    ) {
+                        items(wishlistItems, key = { it.id }) { product ->
+                            ProductCard(
+                                product = product,
+                                onClick = { onNavigateToProduct(product.id) },
+                                onLikeToggle = { viewModel.toggleLike(product.id) },
+                                modifier = Modifier.animateItem()
+                            )
+                        }
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Spacer(modifier = Modifier.height(96.dp))
+                        }
+                    }
+                }
+            } else {
+                // Tab 2: Saved Searches (Flow E: Smart Wishlist matching)
+                if (savedSearches.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(56.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Chưa lưu bộ lọc tìm kiếm nào",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Khi khám phá đồ, bạn có thể lưu các tiêu chí size/gu để nhận thông báo tự động khi có hàng mới.",
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
+                        )
+                        PrimaryButton(
+                            text = "Khám phá & Lưu bộ lọc",
+                            onClick = onExploreClick
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        item {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = PrimarySoft15,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "✨ Tính năng Smart Match: Khi người bán đăng đồ đúng tiêu chí size, gu thời trang hoặc mức giá dưới đây, hệ thống sẽ gửi thông báo đến bạn ngay.",
+                                    fontSize = 11.sp,
+                                    color = Primary,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+
+                        items(savedSearches, key = { it.id }) { search ->
+                            SavedSearchCard(
+                                savedSearch = search,
+                                onToggleAlert = { viewModel.toggleSavedSearchAlert(search.id) },
+                                onDelete = { viewModel.removeSavedSearch(search.id) },
+                                onClick = onExploreClick,
+                                modifier = Modifier.animateItem()
+                            )
+                        }
                     }
                 }
             }
@@ -268,7 +290,8 @@ private fun SavedSearchCard(
     savedSearch: SavedSearch,
     onToggleAlert: () -> Unit,
     onDelete: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val formatter = NumberFormat.getNumberInstance(Locale.GERMANY)
 
@@ -276,7 +299,7 @@ private fun SavedSearchCard(
         shape = RoundedCornerShape(14.dp),
         color = SurfaceWhite,
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {

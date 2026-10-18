@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -48,6 +51,7 @@ import com.swapshe.app.data.SwapSheRepository
 import com.swapshe.app.ui.components.PrimaryButton
 import com.swapshe.app.ui.components.SwapsheTextField
 import com.swapshe.app.ui.components.TextLinkButton
+import com.swapshe.app.ui.responsive.responsiveContentWidth
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.Primary
 import com.swapshe.app.theme.SurfaceWhite
@@ -102,14 +106,22 @@ fun AuthScreen(
         return isValid
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmCream)
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp)
-            .verticalScroll(rememberScrollState())
+            .background(WarmCream),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .responsiveContentWidth(520.dp)
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
         // Top Back row
         Row(
             modifier = Modifier
@@ -136,7 +148,7 @@ fun AuthScreen(
                 )
                 Text(
                     text = "SWAPSHE",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary
@@ -150,7 +162,7 @@ fun AuthScreen(
         // Title
         Text(
             text = if (isRegister) "Tạo tài khoản" else "Chào mừng trở lại",
-            fontFamily = FontFamily.Serif,
+            fontFamily = FontFamily.SansSerif,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
@@ -317,4 +329,5 @@ fun AuthScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
     }
+}
 }

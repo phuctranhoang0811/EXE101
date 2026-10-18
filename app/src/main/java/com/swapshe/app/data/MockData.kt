@@ -107,6 +107,94 @@ object MockData {
 
     val products = listOf(
         Product(
+            id = "prod_offer_01",
+            title = "Tape Winter Coat",
+            brand = "Tape Outerwear",
+            price = 235000L,
+            originalPrice = 490000L,
+            condition = ConditionType.LIKE_NEW,
+            size = "M",
+            category = "Outerwear",
+            style = "Streetwear",
+            color = "Amber Mustard",
+            images = listOf(
+                "https://images.unsplash.com/photo-1544441893-675973e31985?w=800&q=80",
+                "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 96, length = 68, shoulder = 42),
+            description = "Áo phao mùa đông Tape Winter Coat chần bông dày dặn, chống thấm nước, phom chuẩn M ấm áp.",
+            seller = defaultSellerAn,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE,
+            isLiked = true
+        ),
+        Product(
+            id = "prod_offer_02",
+            title = "Arctic Shield Jacket",
+            brand = "Arctic Tech",
+            price = 219000L,
+            originalPrice = 450000L,
+            condition = ConditionType.LIKE_NEW,
+            size = "XL",
+            category = "Outerwear",
+            style = "Sporty",
+            color = "Crimson Red",
+            images = listOf(
+                "https://images.unsplash.com/photo-1548883354-7622d03aca27?w=800&q=80",
+                "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 104, length = 72, shoulder = 46),
+            description = "Áo khoác phao đỏ bóng Arctic Shield siêu ấm, mũ trùm chống tuyết, khóa kéo chống gió kép.",
+            seller = defaultSellerLinh,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE,
+            isLiked = false
+        ),
+        Product(
+            id = "prod_offer_03",
+            title = "FrostGuard Puffer",
+            brand = "FrostGuard",
+            price = 199000L,
+            originalPrice = 390000L,
+            condition = ConditionType.EXCELLENT,
+            size = "XXL",
+            category = "Outerwear",
+            style = "Minimal",
+            color = "Jet Black",
+            images = listOf(
+                "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=800&q=80",
+                "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 110, length = 74, shoulder = 48),
+            description = "Áo phao đen tuyền phom hộp oversize thời thượng, giữ nhiệt cực tốt dưới thời tiết lạnh giá.",
+            seller = defaultSellerAn,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE,
+            isLiked = false
+        ),
+        Product(
+            id = "prod_offer_04",
+            title = "Alpine Thermal Down Jacket",
+            brand = "Alpine Pro",
+            price = 179000L,
+            originalPrice = 350000L,
+            condition = ConditionType.LIKE_NEW,
+            size = "M",
+            category = "Outerwear",
+            style = "Outdoor",
+            color = "Ochre Yellow",
+            images = listOf(
+                "https://images.unsplash.com/photo-1544441893-675973e31985?w=800&q=80",
+                "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80"
+            ),
+            measurements = ProductMeasurements(bust = 98, length = 70, shoulder = 43),
+            description = "Áo lông vũ Alpine Thermal siêu nhẹ nhưng cản gió xuất sắc, phối màu vàng đen năng động.",
+            seller = defaultSellerLinh,
+            canSwap = true,
+            status = ProductStatus.AVAILABLE,
+            isLiked = false
+        ),
+        Product(
             id = "demo_dress_01",
             title = "Đầm Maxi Hoa Đi Biển (Cottagecore)",
             brand = "Cottagecore Bloom",

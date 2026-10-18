@@ -116,8 +116,8 @@ fun ReportDisputeScreen(
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(
-                text = "Báo cáo sự cố & Khiếu nại (Flow D)",
-                fontFamily = FontFamily.Serif,
+                text = "Báo cáo sự cố & Khiếu nại",
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -143,7 +143,7 @@ fun ReportDisputeScreen(
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "🛡️ Đã gửi khiếu nại thành công!",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary
@@ -245,7 +245,7 @@ fun ReportDisputeScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Evidence Attachments (Flow D requirement)
-                Text(text = "Bằng chứng đối soát bắt buộc (Flow D):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text(text = "Bằng chứng đối soát bắt buộc:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -316,9 +316,14 @@ fun ReportDisputeScreen(
             Surface(
                 color = SurfaceWhite,
                 shadowElevation = 8.dp,
-                modifier = Modifier.navigationBarsPadding()
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Box(modifier = Modifier.padding(16.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(16.dp)
+                ) {
                     PrimaryButton(
                         text = "Gửi khiếu nại & ĐÓNG BĂNG TIỀN ESCROW 🛡️",
                         onClick = {

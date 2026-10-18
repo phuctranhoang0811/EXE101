@@ -78,39 +78,34 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import com.swapshe.app.model.EkycStatus
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swapshe.app.ui.viewmodels.MyClosetViewModel
+
 @Composable
 fun MyClosetScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCreateListing: (String?) -> Unit,
     onNavigateToSellerOrders: () -> Unit,
     onPreviewProduct: (String) -> Unit,
-    onNavigateToEkyc: () -> Unit = {}
+    onNavigateToEkyc: () -> Unit = {},
+    viewModel: MyClosetViewModel = viewModel(factory = MyClosetViewModel.provideFactory())
 ) {
-    val repository = SwapSheRepository.instance
-    val user by repository.currentUser.collectAsState()
-    val closetProducts by repository.myCloset.collectAsState()
-    val sellerOrders by repository.sellerOrders.collectAsState()
-
-    var showEkycModal by remember { mutableStateOf(false) }
+    val user by viewModel.user.collectAsState()
+    val closetProducts by viewModel.closetProducts.collectAsState()
+    val sellerOrders by viewModel.sellerOrders.collectAsState()
+    val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
+    val showEkycModal by viewModel.showEkycModal.collectAsState()
+    val filteredList by viewModel.filteredList.collectAsState()
 
     fun checkAndNavigateToCreate(id: String?) {
         if (user.trustProfile.status != EkycStatus.VERIFIED) {
-            showEkycModal = true
+            viewModel.setShowEkycModal(true)
         } else {
             onNavigateToCreateListing(id)
         }
     }
 
     val tabs = listOf("Tất cả", "Đang bán", "Đã giữ chỗ", "Đã bán", "Bản nháp")
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
-    val filteredList = when (selectedTabIndex) {
-        1 -> closetProducts.filter { it.status == ProductStatus.AVAILABLE }
-        2 -> closetProducts.filter { it.status == ProductStatus.RESERVED }
-        3 -> closetProducts.filter { it.status == ProductStatus.SOLD }
-        4 -> closetProducts.filter { it.status == ProductStatus.DRAFT }
-        else -> closetProducts
-    }
 
     Box(
         modifier = Modifier
@@ -132,9 +127,9 @@ fun MyClosetScreen(
             ) {
                 Column {
                     Text(
-                        text = "Tủ đồ của tôi (My Closet)",
-                        fontFamily = FontFamily.Serif,
-                        fontSize = 22.sp,
+                        text = "Tủ đồ của tôi",
+                        fontFamily = FontFamily.SansSerif,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
@@ -145,23 +140,50 @@ fun MyClosetScreen(
                     )
                 }
 
-                // Shortcut to Seller Orders
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = PrimarySoft15,
-                    modifier = Modifier.clickable { onNavigateToSellerOrders() }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Shortcut to Seller Orders
+                    Surface(
+                        shape = RoundedCornerShape(100.dp),
+                        color = BackgroundSubtle,
+                        modifier = Modifier.clickable { onNavigateToSellerOrders() }
                     ) {
-                        Icon(imageVector = Icons.Filled.ShoppingBag, contentDescription = null, tint = Primary, modifier = Modifier.size(16.dp))
-                        Text(
-                            text = " Đơn bán (${sellerOrders.size})",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Primary
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Filled.ShoppingBag, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Đơn bán (${sellerOrders.size})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                        }
+                    }
+
+                    // Header Add Listing Button
+                    Surface(
+                        shape = RoundedCornerShape(100.dp),
+                        color = Primary,
+                        modifier = Modifier.clickable { checkAndNavigateToCreate(null) }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Đăng đồ",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -177,7 +199,7 @@ fun MyClosetScreen(
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
+                        onClick = { viewModel.onTabSelect(index) },
                         text = {
                             Text(
                                 text = title,
@@ -208,7 +230,7 @@ fun MyClosetScreen(
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             text = "Tủ đồ chưa có món nào ở mục này",
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = FontFamily.SansSerif,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = TextPrimary
@@ -237,48 +259,24 @@ fun MyClosetScreen(
                             product = product,
                             onEdit = { onNavigateToCreateListing(product.id) },
                             onPreview = { onPreviewProduct(product.id) },
-                            onDelete = { repository.deleteDraft(product.id) }
+                            onDelete = { viewModel.deleteProduct(product.id) }
                         )
                     }
                     item {
-                        Spacer(modifier = Modifier.height(80.dp))
+                        Spacer(modifier = Modifier.height(96.dp))
                     }
                 }
-            }
-        }
-
-        // Floating Action Button to add item
-        FloatingActionButton(
-            onClick = { checkAndNavigateToCreate(null) },
-            containerColor = Primary,
-            contentColor = Color.White,
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Item")
-                Text(
-                    text = " Đăng đồ mới",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
             }
         }
 
         // eKYC Gate Modal Dialog (Flow B & Flow H)
         if (showEkycModal) {
             AlertDialog(
-                onDismissRequest = { showEkycModal = false },
+                onDismissRequest = { viewModel.setShowEkycModal(false) },
                 title = {
                     Text(
                         text = "🛡️ Yêu cầu xác thực eKYC",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = FontFamily.SansSerif,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -304,7 +302,7 @@ fun MyClosetScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            showEkycModal = false
+                            viewModel.setShowEkycModal(false)
                             onNavigateToEkyc()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Primary)
@@ -313,7 +311,7 @@ fun MyClosetScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showEkycModal = false }) {
+                    TextButton(onClick = { viewModel.setShowEkycModal(false) }) {
                         Text("Để sau", color = TextSecondary)
                     }
                 },

@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import coil.compose.AsyncImage
 import com.swapshe.app.data.SwapSheRepository
 import com.swapshe.app.model.SwapTransaction
@@ -111,6 +112,7 @@ fun SwapDetailScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .responsiveContainerWidth(720.dp)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -119,7 +121,7 @@ fun SwapDetailScreen(
             }
             Text(
                 text = "Tiến trình đổi đồ 2 chiều",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -130,6 +132,7 @@ fun SwapDetailScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .responsiveContainerWidth(720.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
@@ -147,7 +150,7 @@ fun SwapDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Đang xem giao diện với vai trò:",
                             fontSize = 10.sp,
@@ -160,6 +163,7 @@ fun SwapDetailScreen(
                             color = Primary
                         )
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = Primary,
@@ -175,7 +179,9 @@ fun SwapDetailScreen(
                                 text = "Đổi góc nhìn A ⇄ B",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -406,6 +412,9 @@ fun SwapDetailScreen(
                 onClick = { onNavigateToReport("SWAP", transaction.id) },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

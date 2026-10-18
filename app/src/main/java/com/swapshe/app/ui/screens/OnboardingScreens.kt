@@ -110,7 +110,7 @@ fun StylePreferenceScreen(
 
         Text(
             text = "What's your style?",
-            fontFamily = FontFamily.Serif,
+            fontFamily = FontFamily.SansSerif,
             fontSize = 26.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
@@ -217,7 +217,7 @@ fun SizeProfileScreen(
 
         Text(
             text = "Find your perfect fit",
-            fontFamily = FontFamily.Serif,
+            fontFamily = FontFamily.SansSerif,
             fontSize = 26.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
@@ -411,7 +411,7 @@ fun ColorPreferenceScreen(
 
         Text(
             text = "Tone màu trang phục",
-            fontFamily = FontFamily.Serif,
+            fontFamily = FontFamily.SansSerif,
             fontSize = 26.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
@@ -525,7 +525,7 @@ fun SetupCompleteScreen(
 
         Text(
             text = "Hồ sơ đã sẵn sàng!",
-            fontFamily = FontFamily.Serif,
+            fontFamily = FontFamily.SansSerif,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary

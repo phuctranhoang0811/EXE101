@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,12 +16,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CheckCircle
@@ -45,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -54,6 +60,7 @@ import com.swapshe.app.model.UserRole
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.EscrowBlue
+import com.swapshe.app.theme.MinimalInk
 import com.swapshe.app.theme.Primary
 import com.swapshe.app.theme.PrimarySoft15
 import com.swapshe.app.theme.SuccessGreen
@@ -62,6 +69,8 @@ import com.swapshe.app.theme.TextMuted
 import com.swapshe.app.theme.TextPrimary
 import com.swapshe.app.theme.TextSecondary
 import com.swapshe.app.theme.WarningAmber
+import com.swapshe.app.theme.ElectricLavender
+import com.swapshe.app.theme.ElectricAccent
 import java.text.DecimalFormat
 
 @Composable
@@ -69,9 +78,10 @@ fun FloatingDemoControlBar(
     onNavigateToHome: () -> Unit,
     onNavigateToSellerCloset: () -> Unit,
     onNavigateToDisputeDetail: (String) -> Unit,
-    onNavigateToAdminDashboard: () -> Unit = {}
+    onNavigateToAdminDashboard: () -> Unit = {},
+    bottomPadding: androidx.compose.ui.unit.Dp = 76.dp
 ) {
-    val repository = SwapSheRepository.instance
+    val repository = com.swapshe.app.di.AppContainer.repository
     val currentRole by repository.currentRole.collectAsState()
     val currentUser by repository.currentUser.collectAsState()
     val orders by repository.orders.collectAsState()
@@ -86,7 +96,8 @@ fun FloatingDemoControlBar(
     Column(
         modifier = Modifier
             .navigationBarsPadding()
-            .padding(bottom = 76.dp, end = 16.dp, start = 16.dp),
+            .padding(bottom = bottomPadding, end = 16.dp, start = 16.dp)
+            .widthIn(max = 440.dp),
         horizontalAlignment = Alignment.End
     ) {
         // Expanded Simulator Panel
@@ -99,12 +110,18 @@ fun FloatingDemoControlBar(
                 shape = RoundedCornerShape(20.dp),
                 color = SurfaceWhite,
                 shadowElevation = 14.dp,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, Primary.copy(alpha = 0.4f)),
+                border = BorderStroke(1.5.dp, Primary.copy(alpha = 0.4f)),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 440.dp)
                     .padding(bottom = 10.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 480.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
                     // Header Bar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -308,35 +325,88 @@ fun FloatingDemoControlBar(
             }
         }
 
-        // Floating Pill Trigger Button (Always visible on screen)
-        Surface(
-            shape = RoundedCornerShape(100.dp),
-            color = when (currentRole) {
-                UserRole.BUYER -> Color(0xFF6B21A8)
-                UserRole.SELLER -> Color(0xFFC2185B)
-                UserRole.ADMIN -> Color(0xFF0D47A1)
-            },
-            shadowElevation = 8.dp,
-            modifier = Modifier.clickable { isExpanded = !isExpanded }
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+        // Floating Pill Trigger Button (Collapsible and dismissible to prevent obstructing cards)
+        var isMinimized by remember { mutableStateOf(true) }
+        var isDismissed by remember { mutableStateOf(false) }
+
+        if (isDismissed) {
+            Surface(
+                shape = CircleShape,
+                color = ElectricLavender.copy(alpha = 0.45f),
+                border = BorderStroke(1.dp, ElectricAccent.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { isDismissed = false; isMinimized = false; isExpanded = true }
             ) {
-                Text(text = currentRole.icon, fontSize = 16.sp)
-                Spacer(modifier = Modifier.width(6.dp))
-                Column {
-                    Text(
-                        text = currentUser.name,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = if (isExpanded) "Bấm để thu gọn ▲" else "Bấm để đổi vai trò & tua đơn ▾",
-                        fontSize = 9.sp,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
+                Box(contentAlignment = Alignment.Center) {
+                    Text(text = "🛠️", fontSize = 10.sp)
+                }
+            }
+        } else if (isMinimized && !isExpanded) {
+            Box(contentAlignment = Alignment.TopEnd) {
+                Surface(
+                    shape = CircleShape,
+                    color = ElectricLavender,
+                    shadowElevation = 6.dp,
+                    border = BorderStroke(1.dp, ElectricAccent.copy(alpha = 0.8f)),
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clickable { isMinimized = false; isExpanded = true }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = currentRole.icon, fontSize = 16.sp)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(MinimalInk, CircleShape)
+                        .clickable { isDismissed = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "✕", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        } else {
+            Surface(
+                shape = RoundedCornerShape(100.dp),
+                color = ElectricLavender,
+                shadowElevation = 8.dp,
+                border = BorderStroke(1.dp, ElectricAccent.copy(alpha = 0.6f)),
+                modifier = Modifier.clickable { isExpanded = !isExpanded }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = currentRole.icon, fontSize = 15.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text(
+                            text = currentUser.name,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = if (isExpanded) "Bấm để thu gọn ▲" else "Đổi vai trò & tua đơn ▾",
+                            fontSize = 9.sp,
+                            color = ElectricAccent
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            .clickable {
+                                isExpanded = false
+                                isDismissed = true
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "✕", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -380,8 +450,12 @@ private fun RoleSelectCard(
                         text = title,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isSelected) activeColor else TextPrimary
+                        color = if (isSelected) activeColor else TextPrimary,
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Surface(
                         shape = RoundedCornerShape(4.dp),
                         color = if (isSelected) activeColor else BackgroundSubtle
@@ -391,7 +465,9 @@ private fun RoleSelectCard(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isSelected) Color.White else TextMuted,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }

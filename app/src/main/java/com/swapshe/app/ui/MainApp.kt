@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -32,10 +33,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.foundation.layout.Row
 import com.swapshe.app.data.SwapSheRepository
 import com.swapshe.app.theme.Primary
+import com.swapshe.app.ui.navigation.AppNavigationRail
 import com.swapshe.app.ui.navigation.BottomBar
 import com.swapshe.app.ui.navigation.Screen
+import com.swapshe.app.ui.responsive.ProvideWindowSizeInfo
+import com.swapshe.app.ui.responsive.rememberWindowSizeInfo
 import com.swapshe.app.ui.components.FloatingDemoControlBar
 import com.swapshe.app.ui.screens.AdminDashboardScreen
 import com.swapshe.app.ui.screens.AuthScreen
@@ -75,21 +80,50 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun MainApp() {
+    ProvideWindowSizeInfo {
+        MainAppContent()
+    }
+}
+
+@Composable
+private fun MainAppContent() {
+    val windowSizeInfo = rememberWindowSizeInfo()
     val navController = rememberNavController()
-    val repository = SwapSheRepository.instance
+    val repository = com.swapshe.app.di.AppContainer.repository
     val toastMessage by repository.toastMessage.collectAsState()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Show Bottom Navigation on main exploration & top-level tabs (Sitemap v2: Home, Explore, Sell, Swap, Profile)
-    val showBottomBar = currentRoute in listOf(
+    val showNav = currentRoute in listOf(
         Screen.Home.route,
         Screen.Explore.route,
         Screen.MyCloset.route,
         Screen.SwapDiscovery.route,
         Screen.Profile.route
     )
+    val isWideScreen = windowSizeInfo.isWideScreen
+
+    val onNavigateTab: (String) -> Unit = { route ->
+        if (route != currentRoute) {
+            if (route == Screen.Home.route) {
+                val popped = navController.popBackStack(Screen.Home.route, inclusive = false)
+                if (!popped) {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            } else {
+                navController.navigate(route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        }
+    }
 
     // Auto-clear toast
     LaunchedEffect(toastMessage) {
@@ -100,36 +134,20 @@ fun MainApp() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            bottomBar = {
-                if (showBottomBar) {
-                    BottomBar(
-                        currentRoute = currentRoute,
-                        onNavigate = { route ->
-                            if (route == currentRoute) return@BottomBar
-                            if (route == Screen.Home.route) {
-                                val popped = navController.popBackStack(Screen.Home.route, inclusive = false)
-                                if (!popped) {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = true }
-                                        launchSingleTop = true
-                                    }
-                                }
-                            } else {
-                                navController.navigate(route) {
-                                    popUpTo(Screen.Home.route) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        onShowPlaceholderToast = { msg ->
-                            repository.showToast(msg)
-                        }
-                    )
-                }
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (showNav && isWideScreen) {
+                AppNavigationRail(
+                    currentRoute = currentRoute,
+                    onNavigate = onNavigateTab,
+                    onShowPlaceholderToast = { msg -> repository.showToast(msg) }
+                )
             }
-        ) { innerPadding ->
+
+            Scaffold(
+                modifier = Modifier.weight(1f),
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                bottomBar = {}
+            ) { innerPadding ->
             NavHost(
                 navController = navController,
                 startDestination = Screen.Splash.route,
@@ -157,7 +175,7 @@ fun MainApp() {
                         animationSpec = tween(320, easing = FastOutSlowInEasing)
                     ) + fadeOut(tween(250))
                 },
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.fillMaxSize()
             ) {
                 // F01: Splash
                 composable(Screen.Splash.route) {
@@ -271,6 +289,9 @@ fun MainApp() {
                     ExploreScreen(
                         onNavigateToProduct = { id ->
                             navController.navigate(Screen.ProductDetail.createRoute(id))
+                        },
+                        onBack = {
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -658,11 +679,13 @@ fun MainApp() {
                 }
             }
         }
+    }
 
         // Floating Dev Simulator & Role Switcher (Buyer <-> Seller <-> Admin)
         Box(
             modifier = Modifier.align(Alignment.BottomEnd)
         ) {
+            val demoBottomPadding = if (showNav && !isWideScreen) 76.dp else 16.dp
             FloatingDemoControlBar(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
@@ -677,7 +700,17 @@ fun MainApp() {
                 },
                 onNavigateToAdminDashboard = {
                     navController.navigate(Screen.AdminDashboard.route)
-                }
+                },
+                bottomPadding = demoBottomPadding
+            )
+        }
+
+        // Floating Bottom Navigation Bar (Centered Island Pill Dock matching design screenshot)
+        if (showNav && !isWideScreen) {
+            BottomBar(
+                currentRoute = currentRoute,
+                onNavigate = onNavigateTab,
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
 

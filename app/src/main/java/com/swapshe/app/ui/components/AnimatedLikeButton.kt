@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.swapshe.app.theme.ErrorRed
@@ -72,6 +74,7 @@ fun AnimatedLikeButton(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -81,7 +84,10 @@ fun AnimatedLikeButton(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onToggle
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onToggle()
+                }
             )
     ) {
         if (burstProgress.value > 0f && burstProgress.value < 1f) {
@@ -118,7 +124,7 @@ fun AnimatedLikeButton(
         Icon(
             imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
             contentDescription = "Wishlist",
-            tint = if (isLiked) ErrorRed else TextPrimary,
+            tint = if (isLiked) com.swapshe.app.theme.ActiveIconRed else TextPrimary,
             modifier = Modifier
                 .size(iconSize)
                 .scale(scaleAnim.value)

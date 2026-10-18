@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -93,8 +95,8 @@ fun SellerOrdersScreen(
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(
-                text = "Quản lý đơn bán (Seller Orders)",
-                fontFamily = FontFamily.Serif,
+                text = "Quản lý đơn bán",
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -182,8 +184,12 @@ private fun SellerOrderCard(
                     text = order.internalCode,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = TextPrimary,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Status chip
                 val (bg, txt, clr) = when (order.status) {
@@ -205,7 +211,9 @@ private fun SellerOrderCard(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = clr,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -223,9 +231,31 @@ private fun SellerOrderCard(
                 )
 
                 Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                    Text(text = order.item.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary, maxLines = 1)
-                    Text(text = "Người mua: ${order.shippingAddress.fullName}", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
-                    Text(text = "Thu về: ${formatter.format(order.subtotal)}đ", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Primary, modifier = Modifier.padding(top = 2.dp))
+                    Text(
+                        text = order.item.title,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "Người mua: ${order.shippingAddress.fullName}",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    Text(
+                        text = "Thu về: ${formatter.format(order.subtotal)}đ",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Primary,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
 
                 Icon(imageVector = Icons.Filled.ChevronRight, contentDescription = null, tint = TextMuted)

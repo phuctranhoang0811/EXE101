@@ -93,7 +93,7 @@ fun NotificationCenterScreen(
             }
             Text(
                 text = "Trung tâm thông báo",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,

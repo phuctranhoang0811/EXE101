@@ -120,7 +120,7 @@ fun DisputeDetailScreen(
             }
             Text(
                 text = "Hồ sơ khiếu nại #${dispute.id.takeLast(6)}",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -324,7 +324,7 @@ fun DisputeDetailScreen(
                     } else {
                         // Flow D: 3 Seller Options (Hoàn 1 phần / Đồng ý trả 100% / Từ chối)
                         Text(
-                            text = "3 phương án xử lý của Người bán trong 24h (Flow D):",
+                            text = "3 phương án xử lý của Người bán trong 24h:",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Primary
@@ -453,9 +453,14 @@ fun DisputeDetailScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+            ) {
                 PrimaryButton(text = "Quay lại danh sách", onClick = onNavigateBack)
             }
         }

@@ -14,13 +14,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +47,7 @@ import com.swapshe.app.data.SwapSheRepository
 import com.swapshe.app.ui.components.PrimaryButton
 import com.swapshe.app.ui.components.SecondaryButton
 import com.swapshe.app.ui.components.TextLinkButton
+import com.swapshe.app.ui.responsive.responsiveContentWidth
 import com.swapshe.app.theme.BackgroundSubtle
 import com.swapshe.app.theme.BorderColor
 import com.swapshe.app.theme.Primary
@@ -69,23 +74,30 @@ fun WelcomeScreen(
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmCream)
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-            .graphicsLayer {
-                alpha = contentAlpha.value
-                translationY = contentOffsetY.value
-            }
+            .background(WarmCream),
+        contentAlignment = Alignment.TopCenter
     ) {
-        // Top Guest action
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopEnd
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .responsiveContentWidth(480.dp)
+                .fillMaxHeight()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .graphicsLayer {
+                    alpha = contentAlpha.value
+                    translationY = contentOffsetY.value
+                }
         ) {
+            // Top Guest action
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopEnd
+            ) {
             TextLinkButton(
                 text = "Khám phá dạng Khách →",
                 onClick = {
@@ -113,7 +125,7 @@ fun WelcomeScreen(
             Column {
                 Text(
                     text = "SWAPSHE",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary,
@@ -134,7 +146,8 @@ fun WelcomeScreen(
         // Hero Lookbook Image
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.88f)
+                .widthIn(max = 280.dp)
+                .fillMaxWidth(0.85f)
                 .aspectRatio(4f / 5f)
                 .clip(RoundedCornerShape(20.dp))
                 .background(BackgroundSubtle)
@@ -152,7 +165,7 @@ fun WelcomeScreen(
         // Slogan & Heading
         Text(
             text = "Loved Before, Styled Again.",
-            fontFamily = FontFamily.Serif,
+            fontFamily = FontFamily.SansSerif,
             fontSize = 24.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary,
@@ -166,7 +179,7 @@ fun WelcomeScreen(
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(28.dp))
 
         // CTAs
         PrimaryButton(
@@ -183,4 +196,5 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
 }

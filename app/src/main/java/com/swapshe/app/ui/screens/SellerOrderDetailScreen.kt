@@ -102,7 +102,7 @@ fun SellerOrderDetailScreen(
             }
             Text(
                 text = "Chi tiết đơn bán #${order.internalCode}",
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -195,9 +195,14 @@ fun SellerOrderDetailScreen(
         Surface(
             color = SurfaceWhite,
             shadowElevation = 8.dp,
-            modifier = Modifier.navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+            ) {
                 when (order.status) {
                     OrderStatus.PLACED, OrderStatus.PAID -> {
                         PrimaryButton(

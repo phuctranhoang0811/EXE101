@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import com.swapshe.app.ui.responsive.rememberWindowSizeInfo
+import com.swapshe.app.ui.responsive.responsiveContainerWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -57,6 +59,8 @@ fun SwapDiscoveryScreen(
     onNavigateToSwapRequests: () -> Unit
 ) {
     val repository = SwapSheRepository.instance
+    val windowSizeInfo = rememberWindowSizeInfo()
+    val gridColumns = windowSizeInfo.productGridColumns()
     val user by repository.currentUser.collectAsState()
     val products by repository.products.collectAsState()
     val swapOffers by repository.swapOffers.collectAsState()
@@ -88,7 +92,7 @@ fun SwapDiscoveryScreen(
             ) {
                 Text(
                     text = "Đổi đồ 1-1",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = FontFamily.SansSerif,
                     fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -161,11 +165,18 @@ fun SwapDiscoveryScreen(
             }
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
+                columns = GridCells.Fixed(gridColumns),
+                contentPadding = PaddingValues(
+                    start = if (windowSizeInfo.isWideScreen) 24.dp else 16.dp,
+                    end = if (windowSizeInfo.isWideScreen) 24.dp else 16.dp,
+                    top = 16.dp,
+                    bottom = 96.dp
+                ),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .responsiveContainerWidth(1280.dp)
             ) {
                 items(swappableItems, key = { it.id }) { product ->
                     SwapProductGridCard(
